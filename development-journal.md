@@ -150,7 +150,7 @@ void loop() {
 ## Evidence of the finished circuit
 
 <video controls style="max-width: 100%; width: 640px;">
-  <source src="https://github.com/user-attachments/assets/e4b2188f-be2a-4d7c-b2f6-84885011b534" type="video/mp4">
+  <source src="https://github.com/user-attachments/assets/2d6c0fc7-1c57-44ad-8f03-8dc5ba72e1af" type="video/mp4">
 </video>
 
 ## Reflection
