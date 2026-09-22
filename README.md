@@ -2,6 +2,10 @@
 My Innovator Journal
 Hi! My name is Steven.
 
+<p>
+  <a href="https://steeveenshii.github.io/development-journal.html" style="display: inline-block; padding: 12px 18px; color: #ffffff; background: #267CB9; border-radius: 6px; font-weight: bold; text-decoration: none;">View My Arduino Timer Alarm Journal →</a>
+</p>
+
 Who I Am
 
 I am a 9th grade student who is interested in technology, science, and creativity. I enjoy learning about how technology can solve problems and make people's lives easier.
