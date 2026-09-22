@@ -90,7 +90,6 @@ void loop() {
       lightOn = true;
       lightStartTime = millis();
       lastPrintTime = millis();
-
       Serial.println("LIGHT ON");
     }
 
@@ -100,7 +99,6 @@ void loop() {
     // Print timer every 0.5 seconds
     if (currentTime - lastPrintTime >= 500) {
       lastPrintTime = currentTime;
-
       Serial.print("LIGHT ON FOR ");
       Serial.print(lightTime / 1000.0, 1);
       Serial.println(" SECONDS");
@@ -111,7 +109,6 @@ void loop() {
       buzzerOn = true;
       buzzerStartTime = currentTime;
       lastBeepTime = currentTime;
-
       Serial.println("BUZZER STARTED");
     }
 
@@ -122,7 +119,6 @@ void loop() {
       if (buzzerTime >= 3000) {
         noTone(buzzerPin);
         buzzerOn = false;
-
         Serial.println("BUZZER STOPPED");
       }
 
@@ -130,7 +126,6 @@ void loop() {
       else if (currentTime - lastBeepTime >= 500) {
         lastBeepTime = currentTime;
         tone(buzzerPin, 1000, 200);
-
         Serial.println("Timer is done!");
       }
     }
@@ -150,7 +145,9 @@ void loop() {
 
 ## Evidence of the finished circuit
 
-**Add a photo or short video here before submitting.** It should show the Arduino, button, LED, buzzer, and breadboard wiring while the alarm is active. A short video can show the button press, five-second wait, the light and buzzer turning on, and the button release resetting the circuit.
+<video controls style="max-width: 100%; width: 640px;">
+  <source src="https://github.com/user-attachments/assets/e54ca1a8-07b5-428c-aba6-13541d701183" type="video/quicktime">
+</video>
 
 ## Reflection
 
