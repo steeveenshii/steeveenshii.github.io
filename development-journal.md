@@ -1,3 +1,7 @@
+
+
+
+
 # Arduino Timer Alarm — Innovator Journal
 
 ## Project idea
@@ -146,7 +150,7 @@ void loop() {
 ## Evidence of the finished circuit
 
 <video controls style="max-width: 100%; width: 640px;">
-  <source src="https://github.com/user-attachments/assets/e54ca1a8-07b5-428c-aba6-13541d701183" type="video/mp4">
+  <source src="https://github.com/user-attachments/assets/e4b2188f-be2a-4d7c-b2f6-84885011b534" type="video/mp4">
 </video>
 
 ## Reflection
