@@ -12,7 +12,7 @@ I chose this project because I wanted to get better at **analog output** and und
 
 ## New component and research
 
-The new component I chose was a **piezo buzzer**. It is an output device that makes a tone when the Arduino sends it a frequency. I researched how to use the tone() and noTone() functions in Arduino's Tone Melody example: <https://docs.arduino.cc/built-in-examples/digital/toneMelody/>. I also used Arduino's Fade example to learn how PWM output works with analogWrite(): <https://docs.arduino.cc/built-in-examples/basics/Fade/>.
+The new component I chose was a **piezo buzzer**. It is an output device that makes a tone when the Arduino sends it a frequency. I researched how to use the tone() and noTone() functions in Arduino's Tone Melody example: <https://docs.arduino.cc/built-in-examples/digital/toneMelody/>. I also used Arduino's Debounce example to learn how button debouncing works: <https://docs.arduino.cc/built-in-examples/digital/Debounce/>.
 
 ## Materials
 
