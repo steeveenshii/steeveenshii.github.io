@@ -1,9 +1,3 @@
-
-
-
-
-
-
 # 3D Scanner Project
 
 ## Project overview
@@ -13,6 +7,14 @@ For this project, Matthew Ma, Blair Wen, and I built a scanner that can measure 
 ## How the motor helps the scanner
 
 The stepper motor moves the scanner a small amount at a time. As it turns, the distance sensor can take a reading, then the motor can move again to scan the next direction. By repeating this process, the scanner can measure objects around it instead of only looking straight ahead.
+
+## The Steps
+
+At first, I considered using a servo motor. A normal servo is limited to moving from about -90° to +90°, so it cannot keep rotating all the way around the scanner. To make a full scan, we used a NEMA 17 stepper motor instead. The NEMA 17 can turn 360° in small, controlled steps, which lets the sensor measure distance from many directions.
+
+I used AI to help me make and understand the first version of the motor code. Then I tested the code with the circuit and changed it until the motor moved correctly. The code sends a direction signal and repeated step signals so the NEMA 17 turns a small amount at a time.
+
+For the breadboard wiring, we used the power and ground rails to organize the circuit. The Arduino and motor driver shared a common ground. The motor connected to a stepper-motor driver, rather than directly to the Arduino, and the driver connected to the NEMA 17. The Arduino's direction wire went to digital pin 2, and the step wire went to digital pin 3, matching the code. This wiring let the Arduino tell the motor driver when and which way to move the scanner.
 
 ## Teamwork
 
