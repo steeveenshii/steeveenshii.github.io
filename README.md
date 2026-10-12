@@ -5,8 +5,9 @@ Hi! My name is Steven.
 ## My Projects
 
 <p>
-  <a href="https://steeveenshii.github.io/development-journal.html" style="display: inline-block; padding: 12px 18px; color: #ffffff; background: #267CB9; border-radius: 6px; font-weight: bold; text-decoration: none; margin-right: 8px;">Arduino Alarm Project →</a>
-  <a href="https://steeveenshii.github.io/3d-scanner-project.html" style="display: inline-block; padding: 12px 18px; color: #ffffff; background: #267CB9; border-radius: 6px; font-weight: bold; text-decoration: none;">3D Scanner Project →</a>
+  <a href="https://steeveenshii.github.io/development-journal.html" style="display: inline-block; padding: 12px 18px; color: #ffffff; background: #267CB9; border-radius: 6px; font-weight: bold; text-decoration: none; margin: 4px;">Arduino Alarm Project →</a>
+  <a href="https://steeveenshii.github.io/3d-scanner-project.html" style="display: inline-block; padding: 12px 18px; color: #ffffff; background: #267CB9; border-radius: 6px; font-weight: bold; text-decoration: none; margin: 4px;">3D Scanner Project →</a>
+  <a href="https://steeveenshii.github.io/video-games.html" style="display: inline-block; padding: 12px 18px; color: #ffffff; background: #39a852; border-radius: 6px; font-weight: bold; text-decoration: none; margin: 4px;">Video Games →</a>
 </p>
 
 Who I Am
