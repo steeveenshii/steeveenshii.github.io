@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cube Dash</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#080b28;color:#fff;font-family:Arial,sans-serif;display:grid;place-items:center}#wrap{width:min(900px,100vw);position:relative;box-shadow:0 0 40px #168cff;border-radius:12px;overflow:hidden}canvas{display:block;width:100%;background:#1a3dbf}#menu,.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:linear-gradient(#0d1b6e,#1a3dbf,#2a6ae0)}h1{font-size:clamp(34px,6vw,52px);margin:0;text-transform:uppercase;letter-spacing:4px;text-shadow:0 4px #09155c,0 0 22px #4fc3f7}.card,.btn{font:800 19px Arial;color:#fff;border:3px solid #0f6b26;border-radius:10px;cursor:pointer;background:linear-gradient(#39d353,#1f9e3d);box-shadow:0 4px #0a4d1b}.card{width:min(580px,86%);padding:17px 24px;text-align:left}.card.blue,.btn.blue{background:linear-gradient(#4fc3f7,#1976d2);border-color:#0d47a1;box-shadow:0 4px #082f6b}.card small{display:block;margin-top:5px;font-weight:normal}.btn{padding:11px 28px}.home{position:absolute;top:14px;right:14px;z-index:8;background:#fff;color:#123580;border:0;border-radius:7px;padding:9px 13px;font-weight:bold;text-decoration:none}.overlay{display:none;background:rgba(5,8,40,.88);z-index:5}.overlay p{font-size:18px;margin:0}.hud{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:min(440px,58%);height:23px;border:2px solid #fff;border-radius:20px;overflow:hidden;background:#10194f;display:none;z-index:4}.bar{height:100%;width:0%;background:linear-gradient(90deg,#39d353,#aef359)}.pct{position:absolute;inset:0;text-align:center;line-height:19px;font-size:13px;font-weight:bold;text-shadow:0 1px 2px #000}.hint{font-size:13px;text-align:center;padding:0 20px;color:#d5ecff}@media(max-width:600px){#wrap{border-radius:0}.card{font-size:16px}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="900" height="500"></canvas>
+  <a class="home" href="https://steeveenshii.github.io/">Return to Home</a>
+  <div class="hud" id="hud"><div class="bar" id="bar"></div><div class="pct" id="pct">0%</div></div>
+  <div id="menu"><h1>Cube Dash</h1><button class="card" id="one">Stereo Happiness <small>Easy • Level 1 • Cube Mode</small></button><button class="card blue" id="two">Back on Course <small>Normal • Level 2 • Cube and Ship Mode</small></button><div class="hint">Click, Space, or ↑ to jump. Hold in ship mode to fly. ESC pauses.</div></div>
+  <div class="overlay" id="death"><h1>💥 You Crashed!</h1><p id="deathText"></p><button class="btn" id="retry">Retry</button><button class="btn blue" id="menuDeath">Menu</button></div>
+  <div class="overlay" id="win"><h1>🏆 Level Complete!</h1><p id="winText"></p><button class="btn" id="again">Play Again</button><button class="btn blue" id="menuWin">Menu</button></div>
+  <div class="overlay" id="pause"><h1>⏸ Paused</h1><p id="pauseText"></p><button class="btn" id="resume">Resume</button></div>
+</div>
+<script>
+const c=document.querySelector('#game'),x=c.getContext('2d'),W=c.width,H=c.height,G=420,S=6.2;
+const menu=document.querySelector('#menu'),hud=document.querySelector('#hud'),bar=document.querySelector('#bar'),pct=document.querySelector('#pct');
+let state='menu',level,scroll=0,hold=false,attempt=1,tick=0;
+const p={x:150,y:G-36,vy:0,mode:'cube',rot:0};
+const makeLevel=(name,len,ship=false)=>({name,len,ship,spikes:ship?[800,1150,1500,2200,3600,4050,4550,5200,6500,6950,7350,8050,8500,9000]:[900,1250,1600,1950,1984,2600,3150,3650,4050,4084,4118,4700,5250,5500,5534,6550,6584,6618,7650,8150],blocks:ship?[1850,3200,3900,4500,5100,5900]:[2350,2800,2950,5900,6050,6200,6850,7080,7310],portal:ship?2550:-1});
+const levels=[makeLevel('Stereo Happiness',9000),makeLevel('Back on Course',9600,true)];
+function start(n){level=levels[n];scroll=0;attempt=1;reset();menu.style.display='none';hud.style.display='block';state='play'}
+function reset(){p.y=G-36;p.vy=0;p.mode='cube';p.rot=0;hold=false;document.querySelector('#death').style.display='none';document.querySelector('#win').style.display='none';document.querySelector('#pause').style.display='none';}
+function progress(){const q=Math.min(100,Math.floor(scroll/level.len*100));bar.style.width=q+'%';pct.textContent=q+'%';return q}
+function dead(){state='dead';document.querySelector('#deathText').textContent='You reached '+progress()+'% on attempt '+attempt+'.';document.querySelector('#death').style.display='flex'}
+function finish(){state='win';document.querySelector('#winText').textContent=level.name+' — 100% in '+attempt+' attempt'+(attempt===1?'':'s')+'.';document.querySelector('#win').style.display='flex'}
+function hit(ax,ay,aw,ah,bx,by,bw,bh){return ax<bx+bw&&ax+aw>bx&&ay<by+bh&&ay+ah>by}
+function update(){tick++;if(state!=='play')return;scroll+=S;progress();if(scroll>=level.len){finish();return}const world=scroll+p.x;if(level.ship&&world>level.portal)p.mode='ship';if(p.mode==='cube'){p.vy+=.85;p.y+=p.vy;if(p.y+36>=G){p.y=G-36;p.vy=0}else p.rot+=.11;if(hold&&p.y+36>=G){p.vy=-14.2;hold=false}}else{p.vy+=hold?-.55:.55;p.vy=Math.max(-7.5,Math.min(7.5,p.vy));p.y+=p.vy;if(p.y<60){p.y=60;p.vy=0}if(p.y+36>G){p.y=G-36;p.vy=0}}for(const b of level.blocks){const bx=b-scroll,by=G-70;if(hit(p.x,p.y,36,36,bx,by,62,70)){if(p.vy>=0&&p.y+36<by+17){p.y=by-36;p.vy=0}else{dead();return}}}for(const s of level.spikes){const sx=s-scroll;if(hit(p.x+8,p.y+8,20,20,sx+7,G-27,20,27)){dead();return}}}
+function draw(){const ship=p.mode==='ship'&&state!=='menu';const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,ship?'#3d0d6e':'#0d1b6e');g.addColorStop(1,ship?'#a52ae0':'#2a6ae0');x.fillStyle=g;x.fillRect(0,0,W,H);x.fillStyle='#0d1550';x.fillRect(0,G,W,H-G);x.strokeStyle='#4fc3f7';x.lineWidth=3;x.beginPath();x.moveTo(0,G);x.lineTo(W,G);x.stroke();if(state==='menu')return;for(const b of level.blocks){const bx=b-scroll;if(bx>-70&&bx<W){x.fillStyle='#10194f';x.fillRect(bx,G-70,62,70);x.strokeStyle='#4fc3f7';x.strokeRect(bx,G-70,62,70)}}for(const s of level.spikes){const sx=s-scroll;if(sx>-35&&sx<W){x.fillStyle='#0d1550';x.strokeStyle='#fff';x.beginPath();x.moveTo(sx,G);x.lineTo(sx+17,G-30);x.lineTo(sx+34,G);x.closePath();x.fill();x.stroke()}}const end=level.len-scroll+150;if(end<W+40){x.fillStyle='#ffd93b';x.fillRect(end,80,12,G-80);x.fillStyle='#fff';x.font='bold 16px Arial';x.fillText('FINISH',end-22,65)}x.save();x.translate(p.x+18,p.y+18);x.rotate(ship?p.vy*.05:p.rot);x.fillStyle=ship?'#e8e8e8':'#ffd93b';x.strokeStyle=ship?'#555':'#a97d00';x.lineWidth=3;if(ship){x.beginPath();x.moveTo(-27,9);x.lineTo(28,9);x.lineTo(14,-14);x.lineTo(-14,-14);x.closePath();x.fill();x.stroke()}else{x.fillRect(-18,-18,36,36);x.strokeRect(-18,-18,36,36);x.fillStyle='#222';x.fillRect(-11,-8,6,10);x.fillRect(5,-8,6,10);x.fillRect(-8,8,16,4)}x.restore();}
+function loop(){update();draw();requestAnimationFrame(loop)}
+function toMenu(){state='menu';menu.style.display='flex';hud.style.display='none';document.querySelectorAll('.overlay').forEach(e=>e.style.display='none')}
+function jump(e){if(e)e.preventDefault();if(state==='play')hold=true}function release(){hold=false}
+addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='ArrowUp')jump(e);if(e.code==='Escape'){if(state==='play'){state='pause';document.querySelector('#pauseText').textContent=level.name+' — '+progress()+'%';document.querySelector('#pause').style.display='flex'}else if(state==='pause'){state='play';document.querySelector('#pause').style.display='none'}}});addEventListener('keyup',release);c.addEventListener('pointerdown',jump);addEventListener('pointerup',release);
+document.querySelector('#one').onclick=()=>start(0);document.querySelector('#two').onclick=()=>start(1);document.querySelector('#retry').onclick=()=>{attempt++;reset();state='play'};document.querySelector('#again').onclick=()=>{attempt=1;reset();state='play'};document.querySelector('#menuDeath').onclick=toMenu;document.querySelector('#menuWin').onclick=toMenu;document.querySelector('#resume').onclick=()=>{state='play';document.querySelector('#pause').style.display='none'};loop();
+</script>
+</body>
+</html>
