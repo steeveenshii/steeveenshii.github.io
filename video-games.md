@@ -1,3 +1,8 @@
+---
+layout: default
+title: Video Games
+---
+
 # Video Games
 
 <p>
@@ -12,6 +17,22 @@
 In class, I used WebbGPT to help develop **Cube Dash**. I described the kind of game I wanted, then tested the result and looked through the code to understand how the game works. The new version has three levels: **Stereo Happiness**, **Back on Course**, and **Grief**. It also includes cube, ship, and wave movement, a progress bar, attempts, collision detection, and collectible coins.
 
 My outcome is a playable game that I can test in the browser. I am not only using AI for the game; I am learning to read the code one part at a time and connect each code section to something I can see happen in the game.
+
+## AI Code Map: how AI helped me understand Cube Dash
+
+I used WebbGPT to help create the first version of Cube Dash, but I also used AI as a guide while I studied the code. Instead of asking AI to do everything for me, I asked it where important parts of the game are and what they do. This helped me break a large program into smaller parts that I could test and understand.
+
+| What I wanted to find | Where it is in the code | What I learned |
+| --- | --- | --- |
+| The drawing area | `<canvas id="game" width="900" height="500"></canvas>` near the top of the HTML | The canvas is the screen where the game draws the player, obstacles, and background. |
+| The repeating game code | `function loop(){ update(); draw(); requestAnimationFrame(loop); }` | The game keeps running because it updates the information and redraws the screen over and over. |
+| The controls | the `keydown`, `keyup`, mouse, and touch event listeners | The Space bar and Up Arrow change `holdJump`, which tells the player when to jump or fly. |
+| The lose part | `rectsOverlap(a, b)` and the calls to `die()` | The game compares the player's rectangle to spikes and blocks. If they overlap, `die()` starts the lose screen. |
+| The win part | `if(scrollX >= L.len){ win(); return; }` | The game wins when `scrollX`, the distance travelled through the level, reaches `L.len`, the level length. |
+| The progress display | `scrollX / L.len * 100` | The same distance variable is used to calculate the percentage in the progress bar. |
+
+AI helped me find these locations faster, but I still read the nearby lines and tested the game to make sure I understood what was happening. My next step is to explain one part of the code without AI, then make a small change and test what happens.
+
 
 ## Game documentation
 
