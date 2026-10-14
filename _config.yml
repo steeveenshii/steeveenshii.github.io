@@ -1,1 +1,11 @@
-theme:Hacker
+title: Steven's Innovator Journal
+description: Projects, prototypes, and reflections by Steven
+markdown: kramdown
+kramdown:
+  input: GFM
+defaults:
+  - scope:
+      path: ""
+      type: pages
+    values:
+      layout: default
