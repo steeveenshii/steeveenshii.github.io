@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cube Dash</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0b0b2a; font-family:'Segoe UI', Arial, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; overflow:hidden; }
+  #wrap { position:relative; width:900px; height:500px; box-shadow:0 0 40px rgba(0,150,255,.4); border-radius:10px; overflow:hidden; }
+  canvas { display:block; background:#1a3dbf; }
+
+  /* ---------- MENU ---------- */
+  #menu {
+    position:absolute; inset:0;
+    background:linear-gradient(180deg,#0d1b6e 0%,#1a3dbf 60%,#2a6ae0 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+  }
+  #menu h1 {
+    color:#fff; font-size:38px; letter-spacing:4px; text-transform:uppercase;
+    text-shadow:0 4px 0 #0a1860, 0 0 25px #4fc3f7; font-weight:900;
+  }
+  .levelCard {
+    width:580px; padding:14px 28px; border-radius:14px; cursor:pointer;
+    display:flex; align-items:center; justify-content:space-between;
+    transition:transform .12s;
+  }
+  .levelCard.green {
+    background:linear-gradient(180deg,#39d353 0%,#1f9e3d 100%);
+    border:4px solid #0f6b26; box-shadow:0 6px 0 #0a4d1b, 0 0 20px rgba(0,0,0,.35);
+  }
+  .levelCard.blue {
+    background:linear-gradient(180deg,#4fc3f7 0%,#1976d2 100%);
+    border:4px solid #0d47a1; box-shadow:0 6px 0 #082f6b, 0 0 20px rgba(0,0,0,.35);
+  }
+  .levelCard.red {
+    background:linear-gradient(180deg,#ff4040 0%,#9e1111 100%);
+    border:4px solid #640000; box-shadow:0 6px 0 #3d0000, 0 0 25px rgba(255,40,40,.45);
+  }
+  .levelCard:hover { transform:scale(1.03); }
+  .levelCard:active { transform:scale(.98); }
+  .levelCard .name { color:#fff; font-size:23px; font-weight:800; text-shadow:0 2px 0 rgba(0,0,0,.45); }
+  .levelCard .diff { color:#fff; font-size:12px; opacity:.92; margin-top:3px; }
+  .coinDots { margin-top:4px; font-size:14px; letter-spacing:3px; }
+  .face {
+    width:46px; height:46px; border-radius:8px; background:#ffd93b; border:3px solid #a97d00;
+    position:relative; flex-shrink:0;
+  }
+  .face::before, .face::after {
+    content:''; position:absolute; top:10px; width:7px; height:13px; background:#222; border-radius:2px;
+  }
+  .face::before { left:9px; } .face::after { right:9px; }
+  .face .mouth { position:absolute; bottom:7px; left:50%; transform:translateX(-50%); width:20px; height:5px; background:#222; border-radius:2px; }
+  .bigIcon { font-size:34px; flex-shrink:0; filter:drop-shadow(0 2px 2px rgba(0,0,0,.5)); }
+  .hint { color:#bfe3ff; font-size:12px; opacity:.85; }
+
+  /* ---------- OVERLAYS ---------- */
+  .overlay {
+    position:absolute; inset:0; display:none; flex-direction:column;
+    align-items:center; justify-content:center; gap:16px;
+    background:rgba(5,8,40,.82); z-index:5;
+  }
+  .overlay h2 { color:#fff; font-size:40px; text-shadow:0 0 20px #4fc3f7; }
+  .overlay p { color:#cfe8ff; font-size:18px; }
+  .btn {
+    padding:12px 36px; font-size:20px; font-weight:800; color:#fff; cursor:pointer;
+    background:linear-gradient(180deg,#39d353,#1f9e3d); border:3px solid #0f6b26;
+    border-radius:10px; box-shadow:0 4px 0 #0a4d1b;
+  }
+  .btn:active { transform:translateY(3px); box-shadow:0 1px 0 #0a4d1b; }
+  .btn.alt { background:linear-gradient(180deg,#4fc3f7,#1976d2); border-color:#0d47a1; box-shadow:0 4px 0 #082f6b; }
+
+  /* ---------- HUD ---------- */
+  #hud { position:absolute; top:10px; left:0; right:0; display:none; justify-content:center; z-index:4; pointer-events:none; }
+  #progressOuter { position:relative; width:420px; height:20px; background:rgba(0,0,0,.45); border:2px solid rgba(255,255,255,.6); border-radius:10px; overflow:hidden; }
+  #progressInner { height:100%; width:0%; background:linear-gradient(90deg,#39d353,#aef359); }
+  #progressPct {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:13px; font-weight:800; text-shadow:0 1px 2px #000, 0 0 4px #000;
+    letter-spacing:1px;
+  }
+  #attempt { position:absolute; top:40px; width:100%; text-align:center; color:rgba(255,255,255,.85); font-weight:700; font-size:15px; text-shadow:0 2px 3px #000; }
+  #coinHud { position:absolute; top:4px; right:16px; font-size:22px; letter-spacing:4px; text-shadow:0 2px 3px #000; display:none; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="900" height="500"></canvas>
+
+  <div id="menu">
+    <h1>Cube Dash</h1>
+    <div class="levelCard green" id="lvl1">
+      <div>
+        <div class="name">Stereo Happiness</div>
+        <div class="diff">&#9733; Easy &nbsp;&bull;&nbsp; Level 1</div>
+      </div>
+      <div class="face"><div class="mouth"></div></div>
+    </div>
+    <div class="levelCard blue" id="lvl2">
+      <div>
+        <div class="name">Back on Course</div>
+        <div class="diff">&#9733;&#9733; Normal &nbsp;&bull;&nbsp; Level 2 &nbsp;&bull;&nbsp; Ship Mode</div>
+        <div class="coinDots">&#128993;&#128993;&#128993; Hard path: 3 coins</div>
+      </div>
+      <div class="bigIcon">&#128640;</div>
+    </div>
+    <div class="levelCard red" id="lvl3">
+      <div>
+        <div class="name">Grief</div>
+        <div class="diff">&#128127; DEMON &nbsp;&bull;&nbsp; Level 3 &nbsp;&bull;&nbsp; Cube + Wave + Ship</div>
+        <div class="coinDots" style="color:#ffb199;">&#128293; Abandon all hope, ye who enter</div>
+      </div>
+      <div class="bigIcon">&#128520;</div>
+    </div>
+    <div class="hint">Click / Space / Up Arrow &mdash; tap: cube jump &nbsp;&bull;&nbsp; hold: ship/wave up &nbsp;&bull;&nbsp; ESC = pause</div>
+  </div>
+
+  <div class="overlay" id="deathOverlay">
+    <h2 style="text-shadow:0 0 20px #ff5252;">&#128165; You Crashed!</h2>
+    <p id="deathPct"></p>
+    <button class="btn" id="retryBtn">Retry</button>
+    <button class="btn alt" id="menuBtn1">Menu</button>
+  </div>
+
+  <div class="overlay" id="winOverlay">
+    <h2 style="text-shadow:0 0 25px #ffd93b;">&#127942; Level Complete!</h2>
+    <p id="winName"></p>
+    <p id="winAttempts"></p>
+    <p id="winCoins" style="font-size:22px;"></p>
+    <button class="btn" id="againBtn">Play Again</button>
+    <button class="btn alt" id="menuBtn2">Menu</button>
+  </div>
+
+  <div class="overlay" id="pauseOverlay">
+    <h2>&#9208;&#65039; Paused</h2>
+    <p id="pausePct"></p>
+    <button class="btn" id="resumeBtn">Resume</button>
+    <button class="btn alt" id="menuBtn3">Return to Menu</button>
+    <p style="font-size:14px; opacity:.7;">Press ESC to resume</p>
+  </div>
+
+  <div id="hud">
+    <div id="progressOuter">
+      <div id="progressInner"></div>
+      <div id="progressPct">0%</div>
+    </div>
+    <div id="attempt"></div>
+    <div id="coinHud"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+const cvs = document.getElementById('game');
+const ctx = cvs.getContext('2d');
+const W = cvs.width, H = cvs.height;
+const GROUND_Y = 420;
+const CEIL_Y = 60;
+const CUBE = 36;
+const GRAVITY = 0.85;
+const JUMP_V = -14.2;
+const SPEED = 6.2;
+const SHIP_THRUST = 0.55;
+const SHIP_MAXV = 7.5;
+const WAVE_V = 6.2;          // wave moves at 45 degrees like GD
+
+let state = 'menu';   // menu | play | paused | dead | win
+let scrollX = 0;
+let attempts = 1;
+let holdJump = false;
+let deadTimer = 0;
+let particles = [];
+let waveTrail = [];
+let tick = 0;
+let curLevel = 0;
+
+const player = { x:150, y:GROUND_Y - CUBE, vy:0, onGround:true, rot:0, mode:'cube' };
+
+/* ================= THEMES ================= */
+const THEME_SKY = {
+  bg:['#0d1b6e','#1a3dbf','#2a6ae0'], altBg:['#3d0d6e','#7a1abf','#a52ae0'],
+  accent:'#4fc3f7', ground:'#0d1550', solid:'#10194f', plat:'#1e2a8a',
+  spikeStroke:'#ffffff', bgShape:'rgba(255,255,255,0.05)', embers:false
+};
+const THEME_HELL = {
+  bg:['#120000','#4d0404','#7e0d0d'], altBg:['#0a0000','#330000','#5c0a0a'],
+  accent:'#ff5252', ground:'#1a0000', solid:'#260404', plat:'#4d0a0a',
+  spikeStroke:'#ff9e80', bgShape:'rgba(255,80,0,0.08)', embers:true
+};
+
+/* ================= LEVEL BUILDERS ================= */
+function buildLevel1(){
+  const spikes=[], solids=[];
+  const S=(x)=>spikes.push({x,dir:'up'});
+  const S2=(x)=>{S(x);S(x+34);};
+  const S3=(x)=>{S(x);S(x+34);S(x+68);};
+  const B=(x,st,c)=>solids.push({x, y:GROUND_Y-st*CUBE, w:c*CUBE, h:st*CUBE});
+  const P=(x,up,w)=>solids.push({x, y:GROUND_Y-up, w, h:14, plat:true});
+  S(900); S(1250); S(1600);
+  S2(1950);
+  B(2350,1,3); S(2470);
+  B(2800,1,2); B(2950,2,2);
+  S(3350); S2(3650);
+  S3(4050); P(4030,95,140);
+  S3(4450); P(4430,95,140); P(4650,160,120);
+  S(5000); S(5250); S2(5500);
+  B(5900,1,2); B(6050,2,2); B(6200,3,2); S(6360);
+  S3(6550);
+  P(6850,110,110); P(7080,170,110); P(7310,110,110);
+  S2(7200);
+  S(7650); S(7900); S2(8150); S(8500);
+  return { name:'Stereo Happiness', len:9000, spikes, solids, portals:[], coins:[], theme:THEME_SKY };
+}
+
+function buildLevel2(){
+  const spikes=[], solids=[], portals=[], coins=[];
+  const S=(x)=>spikes.push({x,dir:'up'});
+  const S2=(x)=>{S(x);S(x+34);};
+  const S3=(x)=>{S(x);S(x+34);S(x+68);};
+  const Sd=(x)=>spikes.push({x,dir:'down'});
+  const B=(x,st,c)=>solids.push({x, y:GROUND_Y-st*CUBE, w:c*CUBE, h:st*CUBE});
+  const P=(x,up,w)=>solids.push({x, y:GROUND_Y-up, w, h:14, plat:true});
+  const R=(x,y,w,h)=>solids.push({x,y,w,h});
+  const C=(x,y)=>coins.push({x,y,taken:false});
+
+  S(800); S(1150); S2(1500);
+  B(1850,1,2); S(2150);
+  portals.push({x:2550, mode:'ship', used:false});
+  R(2950,GROUND_Y-100,60,100);
+  R(3150,CEIL_Y,60,100);
+  Sd(2880);
+  R(3300,200,2400,36);
+  R(3600,CEIL_Y,60,60);
+  C(3760,150);
+  R(3900,150,60,50);
+  Sd(4100);
+  R(4300,CEIL_Y,60,70);
+  C(4500,135);
+  R(4700,150,60,50);
+  Sd(4900);
+  R(5100,CEIL_Y,60,60);
+  C(5300,130);
+  R(3700,236,60,60);
+  R(4100,GROUND_Y-80,60,80);
+  R(4500,236,60,60);
+  R(4900,GROUND_Y-80,60,80);
+  R(5300,236,60,60);
+  R(5900,GROUND_Y-120,60,120);
+  Sd(5990);
+  portals.push({x:6250, mode:'cube', used:false});
+  S(6650); S(6950); S2(7250);
+  S3(7600); P(7580,95,150);
+  S(8100); S2(8400); S(8800);
+
+  return { name:'Back on Course', len:9600, spikes, solids, portals, coins, theme:THEME_SKY };
+}
+
+function buildLevel3(){
+  const spikes=[], solids=[], portals=[], coins=[];
+  const S=(x)=>spikes.push({x,dir:'up'});
+  const S2=(x)=>{S(x);S(x+34);};
+  const S3=(x)=>{S(x);S(x+34);S(x+68);};
+  const Sd=(x)=>spikes.push({x,dir:'down'});
+  const B=(x,st,c)=>solids.push({x, y:GROUND_Y-st*CUBE, w:c*CUBE, h:st*CUBE});
+  const R=(x,y,w,h)=>solids.push({x,y,w,h});
+
+  // ===== CUBE INTRO (brutal rhythm) =====
+  S2(650); S3(950); S3(1250); S2(1550); S(1750); S3(1950);
+
+  // ===== WAVE PORTAL =====
+  portals.push({x:2350, mode:'wave', used:false});
+
+  // wave warm-up: alternating fangs from ceiling and floor
+  R(2600, CEIL_Y, 50, 140);
+  R(2800, GROUND_Y-140, 50, 140);
+  R(3000, CEIL_Y, 50, 180);
+  R(3200, GROUND_Y-180, 50, 180);
+  R(3400, CEIL_Y, 50, 200);
+  R(3600, GROUND_Y-200, 50, 200);
+
+  // wave hell corridor: tight gaps that move up and down
+  R(3800, CEIL_Y, 50, 150);  R(3800, GROUND_Y-150, 50, 150);
+  R(4000, CEIL_Y, 50, 170);  R(4000, GROUND_Y-110, 50, 110);
+  R(4200, CEIL_Y, 50, 100);  R(4200, GROUND_Y-200, 50, 200);
+  R(4400, CEIL_Y, 50, 220);  R(4400, GROUND_Y-80,  50, 80);
+  R(4600, CEIL_Y, 50, 120);  R(4600, GROUND_Y-180, 50, 180);
+  R(4800, CEIL_Y, 50, 160);  R(4800, GROUND_Y-140, 50, 140);
+  R(5000, CEIL_Y, 50, 200);  R(5000, GROUND_Y-100, 50, 100);
+
+  // ===== SHIP PORTAL =====
+  portals.push({x:5350, mode:'ship', used:false});
+
+  // ship gauntlet: tight pillars + spikes both sides
+  R(5650, CEIL_Y, 60, 150);
+  R(5850, GROUND_Y-150, 60, 150);
+  R(6050, CEIL_Y, 60, 200);
+  Sd(6250);
+  R(6350, GROUND_Y-220, 60, 220);
+  R(6550, CEIL_Y, 60, 180);
+  S(6650);
+  R(6750, GROUND_Y-160, 60, 160);
+  Sd(6850);
+  R(6950, CEIL_Y, 60, 140);
+  R(7150, GROUND_Y-190, 60, 190);
+  R(7350, CEIL_Y, 60, 160);
+  S(7450);
+
+  // ===== CUBE PORTAL =====
+  portals.push({x:7700, mode:'cube', used:false});
+
+  // cube finale: the final trial
+  S3(8000); S2(8300); S3(8550);
+  B(8850,1,2); S3(8980);
+  S2(9300); S3(9550);
+
+  return { name:'Grief', len:10000, spikes, solids, portals, coins, theme:THEME_HELL };
+}
+
+const LEVELS = [buildLevel1(), buildLevel2(), buildLevel3()];
+let L = LEVELS[0];
+
+/* ================= INPUT ================= */
+function press(e){ if(e) e.preventDefault(); if(state==='paused') return; holdJump = true; }
+function release(){ holdJump = false; }
+addEventListener('keydown', e => {
+  if(e.code==='Space'||e.code==='ArrowUp'){ press(e); }
+  if(e.code==='Escape'){ e.preventDefault(); togglePause(); }
+});
+addEventListener('keyup', e => { if(e.code==='Space'||e.code==='ArrowUp') release(); });
+cvs.addEventListener('mousedown', press);
+addEventListener('mouseup', release);
+cvs.addEventListener('touchstart', press, {passive:false});
+addEventListener('touchend', release);
+
+/* ================= UI ================= */
+const menu = document.getElementById('menu');
+const hud = document.getElementById('hud');
+const deathOverlay = document.getElementById('deathOverlay');
+const winOverlay = document.getElementById('winOverlay');
+const pauseOverlay = document.getElementById('pauseOverlay');
+const progressInner = document.getElementById('progressInner');
+const progressPct = document.getElementById('progressPct');
+const attemptEl = document.getElementById('attempt');
+const coinHud = document.getElementById('coinHud');
+
+document.getElementById('lvl1').onclick = () => { curLevel=0; attempts=1; startLevel(); };
+document.getElementById('lvl2').onclick = () => { curLevel=1; attempts=1; startLevel(); };
+document.getElementById('lvl3').onclick = () => { curLevel=2; attempts=1; startLevel(); };
+document.getElementById('retryBtn').onclick = () => { attempts++; startLevel(); };
+document.getElementById('againBtn').onclick = () => { attempts=1; startLevel(); };
+document.getElementById('resumeBtn').onclick = resumeGame;
+document.getElementById('menuBtn1').onclick = toMenu;
+document.getElementById('menuBtn2').onclick = toMenu;
+document.getElementById('menuBtn3').onclick = toMenu;
+
+function togglePause(){
+  if(state==='play'){
+    state='paused';
+    holdJump = false;
+    document.getElementById('pausePct').textContent =
+      L.name + ' \u2014 ' + Math.min(100, Math.floor(scrollX/L.len*100)) + '%';
+    pauseOverlay.style.display='flex';
+  } else if(state==='paused'){
+    resumeGame();
+  }
+}
+function resumeGame(){
+  if(state!=='paused') return;
+  state='play';
+  holdJump = false;
+  pauseOverlay.style.display='none';
+}
+function toMenu(){
+  state='menu';
+  menu.style.display='flex'; hud.style.display='none';
+  deathOverlay.style.display='none'; winOverlay.style.display='none';
+  pauseOverlay.style.display='none';
+}
+function updateProgress(){
+  const pct = Math.min(100, Math.floor(scrollX/L.len*100));
+  progressInner.style.width = Math.min(100, scrollX/L.len*100) + '%';
+  progressPct.textContent = pct + '%';
+}
+function updateCoinHud(){
+  if(!L.coins.length){ coinHud.style.display='none'; return; }
+  coinHud.style.display='block';
+  let s='';
+  for(const c of L.coins) s += c.taken ? '\u{1F7E1}' : '\u26AA';
+  coinHud.innerHTML = s;
+}
+function startLevel(){
+  L = LEVELS[curLevel];
+  scrollX = 0; player.y = GROUND_Y - CUBE; player.vy = 0; player.onGround = true;
+  player.rot = 0; player.mode = 'cube';
+  for(const p of L.portals) p.used = false;
+  for(const c of L.coins) c.taken = false;
+  particles = []; waveTrail = []; holdJump = false;
+  state='play';
+  menu.style.display='none'; deathOverlay.style.display='none';
+  winOverlay.style.display='none'; pauseOverlay.style.display='none';
+  hud.style.display='flex';
+  attemptEl.textContent = 'Attempt ' + attempts;
+  updateProgress();
+  updateCoinHud();
+}
+function die(){
+  state='dead'; deadTimer = 0;
+  for(let i=0;i<26;i++){
+    particles.push({
+      x:player.x+CUBE/2, y:player.y+CUBE/2,
+      vx:(Math.random()-0.5)*10, vy:(Math.random()-0.9)*9,
+      life:40+Math.random()*20, c: Math.random()<.5 ? '#ffd93b' : '#ff8f00'
+    });
+  }
+  document.getElementById('deathPct').textContent =
+    'You reached ' + Math.min(100, Math.floor(scrollX/L.len*100)) + '%';
+}
+function win(){
+  state='win';
+  document.getElementById('winName').textContent = L.name + ' \u2014 100%';
+  document.getElementById('winAttempts').textContent = 'Attempts: ' + attempts;
+  const wc = document.getElementById('winCoins');
+  if(L.coins.length){
+    const got = L.coins.filter(c=>c.taken).length;
+    let s='';
+    for(const c of L.coins) s += c.taken ? '\u{1F7E1}' : '\u26AA';
+    wc.textContent = 'Coins: ' + got + '/' + L.coins.length + '  ' + s;
+    wc.style.display='block';
+  } else wc.style.display='none';
+  winOverlay.style.display='flex';
+}
+
+/* ================= PHYSICS ================= */
+function rectsOverlap(a,b){
+  return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+}
+function update(){
+  tick++;
+  if(state==='paused') return;
+  if(state==='dead'){
+    deadTimer++;
+    particles.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=0.35; p.life--; });
+    particles = particles.filter(p=>p.life>0);
+    if(deadTimer===45) deathOverlay.style.display='flex';
+    return;
+  }
+  if(state!=='play') return;
+
+  scrollX += SPEED;
+  updateProgress();
+  if(scrollX >= L.len){ win(); return; }
+
+  const worldX = scrollX + player.x;
+
+  // portals
+  for(const po of L.portals){
+    if(!po.used && worldX + CUBE/2 >= po.x){
+      po.used = true;
+      player.mode = po.mode;
+      player.vy = Math.max(-5, Math.min(5, player.vy));
+      if(po.mode!=='wave') waveTrail = [];
+    }
+  }
+
+  const prevY = player.y;
+
+  if(player.mode === 'cube'){
+    player.vy += GRAVITY;
+    player.y += player.vy;
+    player.onGround = false;
+    if(player.y + CUBE >= GROUND_Y){ player.y = GROUND_Y - CUBE; player.vy = 0; player.onGround = true; }
+  } else if(player.mode === 'ship'){
+    player.vy += holdJump ? -SHIP_THRUST : SHIP_THRUST;
+    player.vy = Math.max(-SHIP_MAXV, Math.min(SHIP_MAXV, player.vy));
+    player.y += player.vy;
+    player.onGround = false;
+    if(player.y <= CEIL_Y){ player.y = CEIL_Y; player.vy = 0; }
+    if(player.y + CUBE >= GROUND_Y){ player.y = GROUND_Y - CUBE; player.vy = 0; player.onGround = true; }
+    if(holdJump && tick%2===0){
+      particles.push({ x:player.x-10, y:player.y+CUBE-6, vx:-2-Math.random()*2, vy:(Math.random()-0.3)*2, life:14, c:Math.random()<.5?'#ffd93b':'#ff8f00' });
+    }
+  } else {
+    // WAVE: 45-degree zigzag like GD - hold = up, release = down
+    player.vy = holdJump ? -WAVE_V : WAVE_V;
+    player.y += player.vy;
+    player.onGround = false;
+    if(player.y <= CEIL_Y){ player.y = CEIL_Y; }
+    if(player.y + CUBE >= GROUND_Y){ player.y = GROUND_Y - CUBE; }
+    waveTrail.push({ wx: worldX + CUBE/2 - 8, y: player.y + CUBE/2 });
+    while(waveTrail.length > 60) waveTrail.shift();
+  }
+
+  // solids
+  const isWave = player.mode==='wave';
+  const pRect = isWave
+    ? { x:worldX+10, y:player.y+10, w:CUBE-20, h:CUBE-20 }
+    : { x:worldX, y:player.y, w:CUBE, h:CUBE };
+  for(const s of L.solids){
+    if(s.x > worldX + 200 || s.x + s.w < worldX - 100) continue;
+    if(rectsOverlap(pRect, s)){
+      if(isWave){ die(); return; }     // wave dies on ANY block, like GD
+      const prevBottom = prevY + CUBE;
+      const prevTop = prevY;
+      if(player.vy >= 0 && prevBottom <= s.y + 10){
+        player.y = s.y - CUBE; player.vy = 0; player.onGround = true;
+      } else if(player.mode==='ship' && player.vy < 0 && prevTop >= s.y + s.h - 10 && !s.plat){
+        player.y = s.y + s.h; player.vy = 0;
+      } else if(!s.plat){
+        die(); return;
+      }
+      pRect.y = player.y;
+    }
+  }
+
+  // cube jump
+  if(player.mode==='cube' && holdJump && player.onGround){
+    player.vy = JUMP_V; player.onGround = false;
+  }
+
+  // rotation
+  if(player.mode==='cube'){
+    if(!player.onGround) player.rot += 0.11;
+    else player.rot = Math.round(player.rot/(Math.PI/2))*(Math.PI/2);
+  }
+
+  // spikes
+  const hb = { x:worldX+7, y:player.y+7, w:CUBE-14, h:CUBE-14 };
+  for(const sp of L.spikes){
+    if(sp.x > worldX + 100 || sp.x + 34 < worldX - 60) continue;
+    const sRect = sp.dir==='up'
+      ? { x:sp.x+8, y:GROUND_Y-26, w:18, h:26 }
+      : { x:sp.x+8, y:CEIL_Y, w:18, h:26 };
+    if(rectsOverlap(hb, sRect)){ die(); return; }
+  }
+
+  // coins
+  for(const c of L.coins){
+    if(c.taken) continue;
+    if(Math.abs(c.x - (worldX+CUBE/2)) < 32 && Math.abs(c.y - (player.y+CUBE/2)) < 34){
+      c.taken = true;
+      updateCoinHud();
+      for(let i=0;i<10;i++){
+        particles.push({ x:c.x-scrollX, y:c.y, vx:(Math.random()-0.5)*6, vy:(Math.random()-0.8)*5, life:25, c:'#ffd93b' });
+      }
+    }
+  }
+
+  // hellish rising embers
+  if(L.theme.embers && tick%5===0){
+    particles.push({
+      x:Math.random()*W, y:GROUND_Y+40,
+      vx:(Math.random()-0.5)*1.2, vy:-1.5-Math.random()*2,
+      life:50+Math.random()*30, c: Math.random()<.5 ? '#ff6d00' : '#ff3d00'
+    });
+  }
+
+  particles.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; if(p.c!=='#ff6d00'&&p.c!=='#ff3d00') p.vy+=0.2; p.life--; });
+  particles = particles.filter(p=>p.life>0);
+}
+
+/* ================= DRAWING ================= */
+function drawShip(cx, cy, tilt){
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(tilt);
+  ctx.fillStyle = '#e8e8e8';
+  ctx.strokeStyle = '#555'; ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-26, 2);
+  ctx.quadraticCurveTo(-30, 14, -18, 16);
+  ctx.lineTo(20, 16);
+  ctx.quadraticCurveTo(34, 14, 28, 2);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#4fc3f7';
+  ctx.beginPath();
+  ctx.moveTo(-20, 2); ctx.lineTo(-30, -12); ctx.lineTo(-12, 2);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#ffd93b';
+  ctx.strokeStyle = '#a97d00'; ctx.lineWidth = 2.5;
+  ctx.fillRect(-11, -20, 24, 24);
+  ctx.strokeRect(-11, -20, 24, 24);
+  ctx.fillStyle = '#222';
+  ctx.fillRect(-6, -14, 4, 7);
+  ctx.fillRect(4, -14, 4, 7);
+  ctx.fillRect(-4, -3, 10, 3);
+  ctx.restore();
+}
+function drawWave(cx, cy){
+  // trail
+  if(waveTrail.length > 1){
+    ctx.save();
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(0,229,255,0.35)';
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    ctx.moveTo(waveTrail[0].wx - scrollX, waveTrail[0].y);
+    for(let i=1;i<waveTrail.length;i++) ctx.lineTo(waveTrail[i].wx - scrollX, waveTrail[i].y);
+    ctx.lineTo(cx, cy);
+    ctx.stroke();
+    ctx.strokeStyle = '#00e5ff';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    ctx.restore();
+  }
+  // arrow body
+  const ang = holdJump ? -Math.PI/4 : Math.PI/4;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(ang);
+  ctx.fillStyle = '#ffd93b';
+  ctx.strokeStyle = '#a97d00'; ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(16, 0);
+  ctx.lineTo(-12, -11);
+  ctx.lineTo(-5, 0);
+  ctx.lineTo(-12, 11);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+function drawCoin(cx, cy){
+  const spin = Math.cos(tick*0.08 + cx*0.01);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(Math.max(0.15, Math.abs(spin)), 1);
+  ctx.fillStyle = '#ffd93b';
+  ctx.strokeStyle = '#a97d00'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(0,0,13,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = '#c99a10'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(0,0,7,0,Math.PI*2); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = 'rgba(255,217,59,0.15)';
+  ctx.beginPath(); ctx.arc(cx,cy,20,0,Math.PI*2); ctx.fill();
+}
+function drawPortal(px, mode){
+  const top = mode==='cube' ? CEIL_Y : GROUND_Y-150;
+  const bot = GROUND_Y;
+  const cy = (top+bot)/2, ry = (bot-top)/2;
+  const col = mode==='ship' ? '#ff5ce1' : mode==='wave' ? '#00e5ff' : '#7cfc00';
+  ctx.save();
+  ctx.strokeStyle = col; ctx.lineWidth = 5;
+  ctx.shadowColor = col; ctx.shadowBlur = 18;
+  ctx.beginPath(); ctx.ellipse(px, cy, 16, ry, 0, 0, Math.PI*2); ctx.stroke();
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.ellipse(px, cy, 8, ry-10, 0, 0, Math.PI*2); ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = col; ctx.globalAlpha = 0.12;
+  ctx.beginPath(); ctx.ellipse(px, cy, 16, ry, 0, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function draw(){
+  const T = (state==='menu') ? THEME_SKY : L.theme;
+  const useAlt = state!=='menu' && player.mode!=='cube' && T.altBg;
+  const cols = useAlt ? T.altBg : T.bg;
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,cols[0]); g.addColorStop(.6,cols[1]); g.addColorStop(1,cols[2]);
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+  ctx.fillStyle = T.bgShape;
+  for(let i=0;i<6;i++){
+    const bx = ((i*260 - scrollX*0.3) % (W+300) + W+300) % (W+300) - 150;
+    ctx.beginPath();
+    ctx.moveTo(bx, GROUND_Y); ctx.lineTo(bx+90, GROUND_Y-170); ctx.lineTo(bx+180, GROUND_Y);
+    ctx.fill();
+  }
+
+  if(state==='menu'){ return; }
+
+  const endX = L.len - scrollX + 150;
+  if(endX < W+100){
+    ctx.fillStyle = '#ffd93b';
+    ctx.fillRect(endX, 80, 14, GROUND_Y-80);
+    ctx.fillStyle = 'rgba(255,217,59,0.25)';
+    ctx.fillRect(endX-30, 80, 30, GROUND_Y-80);
+    ctx.fillStyle='#fff'; ctx.font='bold 18px Segoe UI'; ctx.textAlign='center';
+    ctx.fillText('FINISH', endX+7, 65);
+    ctx.textAlign='left';
+  }
+
+  // ceiling (ship + wave modes)
+  if(player.mode!=='cube'){
+    ctx.fillStyle = T.ground;
+    ctx.fillRect(0, 0, W, CEIL_Y);
+    ctx.strokeStyle = T.accent; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0,CEIL_Y); ctx.lineTo(W,CEIL_Y); ctx.stroke();
+  }
+
+  ctx.fillStyle = T.ground;
+  ctx.fillRect(0, GROUND_Y, W, H-GROUND_Y);
+  ctx.strokeStyle = T.accent; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0,GROUND_Y); ctx.lineTo(W,GROUND_Y); ctx.stroke();
+  ctx.strokeStyle = T.accent; ctx.globalAlpha = 0.25; ctx.lineWidth=1;
+  for(let i=0;i<20;i++){
+    const lx = ((i*60 - scrollX) % (W+60) + W+60) % (W+60) - 30;
+    ctx.beginPath(); ctx.moveTo(lx, GROUND_Y); ctx.lineTo(lx-20, H); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  for(const po of L.portals){
+    const px = po.x - scrollX;
+    if(px > -40 && px < W+40) drawPortal(px, po.mode);
+  }
+
+  for(const s of L.solids){
+    const sx = s.x - scrollX;
+    if(sx > W || sx + s.w < 0) continue;
+    if(s.plat){
+      ctx.fillStyle = T.plat;
+      ctx.fillRect(sx, s.y, s.w, s.h);
+      ctx.strokeStyle = T.accent; ctx.lineWidth=2.5;
+      ctx.strokeRect(sx, s.y, s.w, s.h);
+    } else {
+      ctx.fillStyle = T.solid;
+      ctx.fillRect(sx, s.y, s.w, s.h);
+      ctx.strokeStyle = T.accent; ctx.lineWidth=2.5;
+      ctx.strokeRect(sx, s.y, s.w, s.h);
+      ctx.strokeStyle = T.accent; ctx.globalAlpha = 0.3; ctx.lineWidth=1;
+      for(let gx=sx+CUBE; gx<sx+s.w; gx+=CUBE){
+        ctx.beginPath(); ctx.moveTo(gx,s.y); ctx.lineTo(gx,s.y+s.h); ctx.stroke();
+      }
+      for(let gy=s.y+CUBE; gy<s.y+s.h; gy+=CUBE){
+        ctx.beginPath(); ctx.moveTo(sx,gy); ctx.lineTo(sx+s.w,gy); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  for(const sp of L.spikes){
+    const sx = sp.x - scrollX;
+    if(sx > W || sx+34 < 0) continue;
+    ctx.fillStyle = T.ground;
+    ctx.strokeStyle = T.spikeStroke; ctx.lineWidth = 2;
+    ctx.beginPath();
+    if(sp.dir==='up'){
+      ctx.moveTo(sx+2, GROUND_Y);
+      ctx.lineTo(sx+17, GROUND_Y-30);
+      ctx.lineTo(sx+32, GROUND_Y);
+    } else {
+      ctx.moveTo(sx+2, CEIL_Y);
+      ctx.lineTo(sx+17, CEIL_Y+30);
+      ctx.lineTo(sx+32, CEIL_Y);
+    }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+
+  for(const c of L.coins){
+    if(c.taken) continue;
+    const cx = c.x - scrollX;
+    if(cx > -30 && cx < W+30) drawCoin(cx, c.y);
+  }
+
+  if(state!=='dead'){
+    if(player.mode==='cube'){
+      ctx.save();
+      ctx.translate(player.x+CUBE/2, player.y+CUBE/2);
+      ctx.rotate(player.rot);
+      ctx.fillStyle = '#ffd93b';
+      ctx.strokeStyle = '#a97d00'; ctx.lineWidth = 3;
+      ctx.fillRect(-CUBE/2, -CUBE/2, CUBE, CUBE);
+      ctx.strokeRect(-CUBE/2, -CUBE/2, CUBE, CUBE);
+      ctx.fillStyle = '#222';
+      ctx.fillRect(-11, -9, 6, 10);
+      ctx.fillRect(5, -9, 6, 10);
+      ctx.fillRect(-8, 7, 16, 4);
+      ctx.restore();
+      if(state==='play'){
+        ctx.fillStyle='rgba(255,217,59,0.35)';
+        ctx.fillRect(player.x-14, player.y+CUBE-8, 10, 5);
+        ctx.fillRect(player.x-26, player.y+CUBE-7, 7, 4);
+      }
+    } else if(player.mode==='ship'){
+      const tilt = Math.max(-0.5, Math.min(0.5, player.vy * 0.055));
+      drawShip(player.x+CUBE/2, player.y+CUBE/2+4, tilt);
+    } else {
+      drawWave(player.x+CUBE/2, player.y+CUBE/2);
+    }
+  }
+
+  for(const p of particles){
+    ctx.fillStyle = p.c;
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.life/40));
+    ctx.fillRect(p.x-4, p.y-4, 8, 8);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+toMenu();
+loop();
+})();
+</script>
+</body>
+</html>
