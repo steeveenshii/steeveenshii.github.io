@@ -97,7 +97,7 @@ AI helped me find these locations faster, but I still read the nearby lines and 
 
 ## Game documentation
 
-The live game below shows the menu and **four playable levels**. It is my visual documentation of the game that WebbGPT helped me develop.
+The live game below shows the menu and **three playable levels**. It is my visual documentation of the game that WebbGPT helped me develop.
 
 <iframe src="https://steeveenshii.github.io/cube-dash-v15.html" title="Cube Dash v15 game" width="900" height="500" style="width:100%; max-width:900px; border:2px solid #267CB9; border-radius:8px;"></iframe>
 
