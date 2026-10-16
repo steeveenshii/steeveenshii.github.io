@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cube Dash</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0b0b2a; font-family:'Segoe UI', Arial, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; overflow:hidden; }
+  #wrap { position:relative; width:900px; height:500px; box-shadow:0 0 40px rgba(0,150,255,.4); border-radius:10px; overflow:hidden; }
+  canvas { display:block; background:#1a3dbf; }
+
+  /* ---------- MENU ---------- */
+  #menu {
+    position:absolute; inset:0;
+    background:linear-gradient(180deg,#0d1b6e 0%,#1a3dbf 60%,#2a6ae0 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:25px;
+  }
+  #menu h1 {
+    color:#fff; font-size:46px; letter-spacing:4px; text-transform:uppercase;
+    text-shadow:0 4px 0 #0a1860, 0 0 25px #4fc3f7; font-weight:900;
+  }
+  .levelCard {
+    width:560px; padding:22px 30px; border-radius:14px; cursor:pointer;
+    background:linear-gradient(180deg,#39d353 0%,#1f9e3d 100%);
+    border:4px solid #0f6b26; box-shadow:0 6px 0 #0a4d1b, 0 0 20px rgba(0,0,0,.35);
+    display:flex; align-items:center; justify-content:space-between;
+    transition:transform .12s;
+  }
+  .levelCard:hover { transform:scale(1.04); }
+  .levelCard:active { transform:scale(.98); box-shadow:0 2px 0 #0a4d1b; }
+  .levelCard .name { color:#fff; font-size:26px; font-weight:800; text-shadow:0 2px 0 rgba(0,0,0,.45); }
+  .levelCard .diff { color:#fff; font-size:13px; opacity:.9; margin-top:4px; }
+  .face {
+    width:52px; height:52px; border-radius:8px; background:#ffd93b; border:3px solid #a97d00;
+    position:relative; flex-shrink:0;
+  }
+  .face::before, .face::after {
+    content:''; position:absolute; top:12px; width:8px; height:14px; background:#222; border-radius:2px;
+  }
+  .face::before { left:10px; } .face::after { right:10px; }
+  .face .mouth { position:absolute; bottom:9px; left:50%; transform:translateX(-50%); width:22px; height:5px; background:#222; border-radius:2px; }
+  .lockedCard {
+    width:560px; padding:22px 30px; border-radius:14px;
+    background:linear-gradient(180deg,#555 0%,#333 100%);
+    border:4px solid #222; display:flex; align-items:center; justify-content:space-between; opacity:.65;
+  }
+  .lockedCard .name { color:#bbb; font-size:26px; font-weight:800; }
+  .hint { color:#bfe3ff; font-size:14px; opacity:.85; }
+
+  /* ---------- OVERLAYS ---------- */
+  .overlay {
+    position:absolute; inset:0; display:none; flex-direction:column;
+    align-items:center; justify-content:center; gap:18px;
+    background:rgba(5,8,40,.82); z-index:5;
+  }
+  .overlay h2 { color:#fff; font-size:42px; text-shadow:0 0 20px #4fc3f7; }
+  .overlay p { color:#cfe8ff; font-size:18px; }
+  .btn {
+    padding:12px 36px; font-size:20px; font-weight:800; color:#fff; cursor:pointer;
+    background:linear-gradient(180deg,#39d353,#1f9e3d); border:3px solid #0f6b26;
+    border-radius:10px; box-shadow:0 4px 0 #0a4d1b;
+  }
+  .btn:active { transform:translateY(3px); box-shadow:0 1px 0 #0a4d1b; }
+  .btn.alt { background:linear-gradient(180deg,#4fc3f7,#1976d2); border-color:#0d47a1; box-shadow:0 4px 0 #082f6b; }
+
+  /* ---------- HUD ---------- */
+  #hud { position:absolute; top:10px; left:0; right:0; display:none; justify-content:center; z-index:4; pointer-events:none; }
+  #progressOuter { width:420px; height:14px; background:rgba(0,0,0,.45); border:2px solid rgba(255,255,255,.6); border-radius:8px; overflow:hidden; }
+  #progressInner { height:100%; width:0%; background:linear-gradient(90deg,#39d353,#aef359); }
+  #attempt { position:absolute; top:34px; width:100%; text-align:center; color:rgba(255,255,255,.85); font-weight:700; font-size:15px; text-shadow:0 2px 3px #000; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="900" height="500"></canvas>
+
+  <div id="menu">
+    <h1>Cube Dash</h1>
+    <div class="levelCard" id="lvl1">
+      <div>
+        <div class="name">Stereo Happiness</div>
+        <div class="diff">&#9733; Easy &nbsp;&bull;&nbsp; Level 1</div>
+      </div>
+      <div class="face"><div class="mouth"></div></div>
+    </div>
+    <div class="lockedCard">
+      <div><div class="name">&#128274; Coming Soon</div></div>
+    </div>
+    <div class="hint">Click / Space / Up Arrow to jump &mdash; hold to keep jumping</div>
+  </div>
+
+  <div class="overlay" id="deathOverlay">
+    <h2 style="text-shadow:0 0 20px #ff5252;">&#128165; You Crashed!</h2>
+    <p id="deathPct"></p>
+    <button class="btn" id="retryBtn">Retry</button>
+    <button class="btn alt" id="menuBtn1">Menu</button>
+  </div>
+
+  <div class="overlay" id="winOverlay">
+    <h2 style="text-shadow:0 0 25px #ffd93b;">&#127942; Level Complete!</h2>
+    <p>Stereo Happiness &mdash; 100%</p>
+    <p id="winAttempts"></p>
+    <button class="btn" id="againBtn">Play Again</button>
+    <button class="btn alt" id="menuBtn2">Menu</button>
+  </div>
+
+  <div id="hud">
+    <div id="progressOuter"><div id="progressInner"></div></div>
+    <div id="attempt"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+const cvs = document.getElementById('game');
+const ctx = cvs.getContext('2d');
+const W = cvs.width, H = cvs.height;
+const GROUND_Y = 420;
+const CUBE = 36;
+const GRAVITY = 0.85;
+const JUMP_V = -14.2;
+const SPEED = 6.2;
+
+let state = 'menu';       // menu | play | dead | win
+let scrollX = 0;
+let attempts = 1;
+let holdJump = false;
+let deadTimer = 0;
+let particles = [];
+
+const player = { x:150, y:GROUND_Y - CUBE, vy:0, onGround:true, rot:0 };
+
+/* ================= LEVEL DATA (Stereo Madness style) =================
+   Units: x in pixels along the level. Types:
+   spike {x}, block {x, h(stack), w(count)}, platform {x, y, w} (floating)   */
+const LVL_LEN = 9000;
+const spikes = [];
+const blocks = [];      // ground blocks you must jump onto/over
+const plats  = [];      // floating platforms
+
+function S(x){ spikes.push({x}); }                       // single spike
+function S2(x){ S(x); S(x+34); }                         // double spike
+function S3(x){ S(x); S(x+34); S(x+68); }                // triple spike
+function B(x,stack,count){ blocks.push({x, stack, count}); }
+function P(x,yUp,w){ plats.push({x, y:GROUND_Y - yUp, w}); }
+
+// --- Section 1: intro, single spikes (like SM opening) ---
+S(900); S(1250); S(1600);
+// --- double spike ---
+S2(1950);
+// --- blocks to jump on ---
+B(2350,1,3); S(2470);               // spike on top? no - spike after
+B(2800,1,2); B(2950,2,2);
+// --- spike between blocks ---
+S(3350); S2(3650);
+// --- floating platform section over spike pits ---
+S3(4050); P(4030,95,140);
+S3(4450); P(4430,95,140); P(4650,160,120);
+// --- back to ground, rhythm spikes ---
+S(5000); S(5250); S2(5500);
+// --- block stairs ---
+B(5900,1,2); B(6050,2,2); B(6200,3,2); S(6360);
+// --- pit after stairs ---
+S3(6550);
+// --- platform hops ---
+P(6850,110,110); P(7080,170,110); P(7310,110,110);
+S2(7200);
+// --- final stretch ---
+S(7650); S(7900); S2(8150); S(8500);
+
+/* ======== build collision rects ======== */
+function blockRects(){
+  const r = [];
+  for(const b of blocks){
+    r.push({ x:b.x, y:GROUND_Y - b.stack*CUBE, w:b.count*CUBE, h:b.stack*CUBE });
+  }
+  for(const p of plats){
+    r.push({ x:p.x, y:p.y, w:p.w, h:14, plat:true });
+  }
+  return r;
+}
+const solids = blockRects();
+
+/* ================= INPUT ================= */
+function press(e){ if(e) e.preventDefault(); holdJump = true; }
+function release(){ holdJump = false; }
+addEventListener('keydown', e => {
+  if(e.code==='Space'||e.code==='ArrowUp'){ press(e); }
+});
+addEventListener('keyup', e => {
+  if(e.code==='Space'||e.code==='ArrowUp') release();
+});
+cvs.addEventListener('mousedown', press);
+addEventListener('mouseup', release);
+cvs.addEventListener('touchstart', press, {passive:false});
+addEventListener('touchend', release);
+
+/* ================= UI ================= */
+const menu = document.getElementById('menu');
+const hud = document.getElementById('hud');
+const deathOverlay = document.getElementById('deathOverlay');
+const winOverlay = document.getElementById('winOverlay');
+const progressInner = document.getElementById('progressInner');
+const attemptEl = document.getElementById('attempt');
+
+document.getElementById('lvl1').onclick = () => { attempts = 1; startLevel(); };
+document.getElementById('retryBtn').onclick = () => { attempts++; startLevel(); };
+document.getElementById('againBtn').onclick = () => { attempts = 1; startLevel(); };
+document.getElementById('menuBtn1').onclick = toMenu;
+document.getElementById('menuBtn2').onclick = toMenu;
+
+function toMenu(){
+  state='menu';
+  menu.style.display='flex'; hud.style.display='none';
+  deathOverlay.style.display='none'; winOverlay.style.display='none';
+}
+function startLevel(){
+  scrollX = 0; player.y = GROUND_Y - CUBE; player.vy = 0; player.onGround = true; player.rot = 0;
+  particles = []; holdJump = false;
+  state='play';
+  menu.style.display='none'; deathOverlay.style.display='none'; winOverlay.style.display='none';
+  hud.style.display='flex';
+  attemptEl.textContent = 'Attempt ' + attempts;
+}
+function die(){
+  state='dead'; deadTimer = 0;
+  for(let i=0;i<26;i++){
+    particles.push({
+      x:player.x+CUBE/2, y:player.y+CUBE/2,
+      vx:(Math.random()-0.5)*10, vy:(Math.random()-0.9)*9,
+      life:40+Math.random()*20, c: Math.random()<.5 ? '#ffd93b' : '#ff8f00'
+    });
+  }
+  document.getElementById('deathPct').textContent =
+    'You reached ' + Math.min(100, Math.floor(scrollX/LVL_LEN*100)) + '%';
+}
+function win(){
+  state='win';
+  document.getElementById('winAttempts').textContent = 'Attempts: ' + attempts;
+  winOverlay.style.display='flex';
+}
+
+/* ================= PHYSICS ================= */
+function rectsOverlap(a,b){
+  return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+}
+function update(){
+  if(state==='dead'){
+    deadTimer++;
+    particles.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=0.35; p.life--; });
+    particles = particles.filter(p=>p.life>0);
+    if(deadTimer===45) deathOverlay.style.display='flex';
+    return;
+  }
+  if(state!=='play') return;
+
+  scrollX += SPEED;
+  progressInner.style.width = Math.min(100, scrollX/LVL_LEN*100) + '%';
+  if(scrollX >= LVL_LEN){ win(); return; }
+
+  // gravity
+  player.vy += GRAVITY;
+  player.y += player.vy;
+  player.onGround = false;
+
+  const worldX = scrollX + player.x;
+  const pRect = { x:worldX, y:player.y, w:CUBE, h:CUBE };
+
+  // ground
+  if(player.y + CUBE >= GROUND_Y){
+    player.y = GROUND_Y - CUBE; player.vy = 0; player.onGround = true;
+  }
+
+  // solids
+  for(const s of solids){
+    if(s.x > worldX + 200 || s.x + s.w < worldX - 100) continue;
+    if(rectsOverlap(pRect, s)){
+      const prevBottom = player.y - player.vy + CUBE;
+      if(player.vy >= 0 && prevBottom <= s.y + 10){
+        // landed on top
+        player.y = s.y - CUBE; player.vy = 0; player.onGround = true;
+      } else if(!s.plat){
+        die(); return;   // hit the side of a block
+      }
+    }
+    pRect.y = player.y;
+  }
+
+  // jump
+  if(holdJump && player.onGround){
+    player.vy = JUMP_V; player.onGround = false;
+  }
+
+  // rotation like GD
+  if(!player.onGround) player.rot += 0.11;
+  else player.rot = Math.round(player.rot/(Math.PI/2))*(Math.PI/2);
+
+  // spikes (smaller hitbox for fairness)
+  const hb = { x:worldX+7, y:player.y+7, w:CUBE-14, h:CUBE-7 };
+  for(const sp of spikes){
+    if(sp.x > worldX + 100 || sp.x + 34 < worldX - 60) continue;
+    const sRect = { x:sp.x+8, y:GROUND_Y-26, w:18, h:26 };
+    if(rectsOverlap(hb, sRect)){ die(); return; }
+  }
+}
+
+/* ================= DRAWING ================= */
+function draw(){
+  // sky gradient
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#0d1b6e'); g.addColorStop(.6,'#1a3dbf'); g.addColorStop(1,'#2a6ae0');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+  // parallax bg shapes
+  ctx.fillStyle = 'rgba(255,255,255,0.05)';
+  for(let i=0;i<6;i++){
+    const bx = ((i*260 - scrollX*0.3) % (W+300) + W+300) % (W+300) - 150;
+    ctx.beginPath();
+    ctx.moveTo(bx, GROUND_Y); ctx.lineTo(bx+90, GROUND_Y-170); ctx.lineTo(bx+180, GROUND_Y);
+    ctx.fill();
+  }
+
+  if(state==='menu'){ return; }
+
+  // start pad marker
+  const startScreenX = 150 - scrollX + 0; // where level began
+  // end wall / portal
+  const endX = LVL_LEN - scrollX + 150;
+  if(endX < W+100){
+    ctx.fillStyle = '#ffd93b';
+    ctx.fillRect(endX, 80, 14, GROUND_Y-80);
+    ctx.fillStyle = 'rgba(255,217,59,0.25)';
+    ctx.fillRect(endX-30, 80, 30, GROUND_Y-80);
+    ctx.save();
+    ctx.fillStyle='#fff'; ctx.font='bold 18px Segoe UI'; ctx.textAlign='center';
+    ctx.fillText('FINISH', endX+7, 65);
+    ctx.restore();
+  }
+
+  // ground
+  ctx.fillStyle = '#0d1550';
+  ctx.fillRect(0, GROUND_Y, W, H-GROUND_Y);
+  ctx.strokeStyle = '#4fc3f7'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0,GROUND_Y); ctx.lineTo(W,GROUND_Y); ctx.stroke();
+  // ground lines
+  ctx.strokeStyle = 'rgba(79,195,247,0.25)'; ctx.lineWidth=1;
+  for(let i=0;i<20;i++){
+    const lx = ((i*60 - scrollX) % (W+60) + W+60) % (W+60) - 30;
+    ctx.beginPath(); ctx.moveTo(lx, GROUND_Y); ctx.lineTo(lx-20, H); ctx.stroke();
+  }
+
+  // blocks
+  for(const s of solids){
+    const sx = s.x - scrollX;
+    if(sx > W || sx + s.w < 0) continue;
+    if(s.plat){
+      ctx.fillStyle = '#1e2a8a';
+      ctx.fillRect(sx, s.y, s.w, s.h);
+      ctx.strokeStyle = '#4fc3f7'; ctx.lineWidth=2.5;
+      ctx.strokeRect(sx, s.y, s.w, s.h);
+    } else {
+      ctx.fillStyle = '#10194f';
+      ctx.fillRect(sx, s.y, s.w, s.h);
+      ctx.strokeStyle = '#4fc3f7'; ctx.lineWidth=2.5;
+      ctx.strokeRect(sx, s.y, s.w, s.h);
+      // inner grid
+      ctx.strokeStyle='rgba(79,195,247,0.3)'; ctx.lineWidth=1;
+      for(let gx=sx+CUBE; gx<sx+s.w; gx+=CUBE){
+        ctx.beginPath(); ctx.moveTo(gx,s.y); ctx.lineTo(gx,s.y+s.h); ctx.stroke();
+      }
+      for(let gy=s.y+CUBE; gy<s.y+s.h; gy+=CUBE){
+        ctx.beginPath(); ctx.moveTo(sx,gy); ctx.lineTo(sx+s.w,gy); ctx.stroke();
+      }
+    }
+  }
+
+  // spikes
+  for(const sp of spikes){
+    const sx = sp.x - scrollX;
+    if(sx > W || sx+34 < 0) continue;
+    ctx.fillStyle = '#0d1550';
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(sx+2, GROUND_Y);
+    ctx.lineTo(sx+17, GROUND_Y-30);
+    ctx.lineTo(sx+32, GROUND_Y);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+
+  // player
+  if(state!=='dead'){
+    ctx.save();
+    ctx.translate(player.x+CUBE/2, player.y+CUBE/2);
+    ctx.rotate(player.rot);
+    // body
+    ctx.fillStyle = '#ffd93b';
+    ctx.strokeStyle = '#a97d00'; ctx.lineWidth = 3;
+    ctx.fillRect(-CUBE/2, -CUBE/2, CUBE, CUBE);
+    ctx.strokeRect(-CUBE/2, -CUBE/2, CUBE, CUBE);
+    // face
+    ctx.fillStyle = '#222';
+    ctx.fillRect(-11, -9, 6, 10);
+    ctx.fillRect(5, -9, 6, 10);
+    ctx.fillRect(-8, 7, 16, 4);
+    ctx.restore();
+
+    // trail
+    if(state==='play'){
+      ctx.fillStyle='rgba(255,217,59,0.35)';
+      ctx.fillRect(player.x-14, player.y+CUBE-8, 10, 5);
+      ctx.fillRect(player.x-26, player.y+CUBE-7, 7, 4);
+    }
+  }
+
+  // particles
+  for(const p of particles){
+    ctx.fillStyle = p.c;
+    ctx.globalAlpha = Math.max(0, p.life/50);
+    ctx.fillRect(p.x-4, p.y-4, 8, 8);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+toMenu();
+loop();
+})();
+</script>
+</body>
+</html>
