@@ -7,16 +7,36 @@ title: Video Games
 
 <p>
   <a href="https://steeveenshii.github.io/" style="display: inline-block; padding: 12px 18px; color: #ffffff; background: #267CB9; border-radius: 6px; font-weight: bold; text-decoration: none; margin-right: 8px;">← Return to Home</a>
-  <a href="https://steeveenshii.github.io/cube-dash-v4.html" style="display: inline-block; padding: 12px 18px; color: #ffffff; background: #39a852; border-radius: 6px; font-weight: bold; text-decoration: none;">Play Cube Dash v4 →</a>
-</p>
+  <a href="https://steeveenshii.github.io/cube-dash-v13.html" style="display: inline-block; padding: 12px 18px; color: #ffffff; background: #39a852; border-radius: 6px; font-weight: bold; text-decoration: none;">Play Cube Dash v13 →</a></p>
 
-# Innovator's Journal: Cube Dash v4
+# Innovator's Journal: Cube Dash — v1 to v13
 
 ## Process and outcome
 
-In class, I used WebbGPT to help develop **Cube Dash**. I described the kind of game I wanted, then tested the result and looked through the code to understand how the game works. The new version has three levels: **Stereo Happiness**, **Back on Course**, and **Grief**. It also includes cube, ship, and wave movement, a progress bar, attempts, collision detection, and collectible coins.
+In class, I used WebbGPT to help develop **Cube Dash**. I described the kind of game I wanted, then tested the result and looked through the code to understand how the game works. The newest version has four levels: **Stereo Happiness**, **Back on Course**, **Sunshine**, and **Grief**. It also includes cube, ship, and wave movement, a progress bar, attempts, collision detection, and collectible coins.
 
 My outcome is a playable game that I can test in the browser. I am not only using AI for the game; I am learning to read the code one part at a time and connect each code section to something I can see happen in the game.
+
+## Version comparison: Cube Dash v1 and v13
+
+This comparison only uses my first version and my newest version. Version 1 proved that the basic game idea worked. Version 13 shows how I improved it by adding and testing more systems.
+
+| Feature | Cube Dash v1 | Cube Dash v13 |
+| --- | --- | --- |
+| Levels | One level: **Stereo Happiness** | Four levels: **Stereo Happiness**, **Back on Course**, **Sunshine**, and **Grief** |
+| Movement | Cube jumping | Cube, ship, and wave movement |
+| Challenges | Spikes, blocks, and platforms | More obstacles, portals, coins, and harder sections |
+| Player feedback | Menu, attempts, and a progress bar | Selectable levels, progress, attempts, coins, and more visual feedback |
+| What I learned | The basic game loop, jumping, and collision checks | How connected systems, testing, and clearer AI questions can make a game more complete |
+
+The biggest change is that v1 was one playable level, while v13 is a more complete game with choices and different ways to move. I learned that software development happens through small improvements: make one feature work, test it, understand the code, and then build on it.
+
+### Cube Dash v1: my starting point
+
+This first version has one playable level. It helped me understand the basic connection between jumping, obstacles, collision checks, attempts, and progress.
+
+<iframe src="https://steeveenshii.github.io/cube-dash-v1.html" title="Cube Dash v1 game" width="900" height="500" style="width:100%; max-width:900px; border:2px solid #7b61ff; border-radius:8px;"></iframe>
+
 
 ## AI Code Map: how AI helped me understand Cube Dash
 
@@ -46,7 +66,7 @@ These are examples of the kinds of questions I used to guide AI; they helped me 
 
 My process was: **play the game → notice a behavior or question → find the related code with AI → read it → test again.** For example, when I wanted to understand progress, I looked for the value that changes as the player moves through the level. I learned that **scrollX** is used to move through the level, and the game wins when **scrollX** reaches the level length. When I wanted to understand losing, I followed **rectsOverlap(a, b)** and **die()** and then watched what happened when the cube hit a spike.
 
-This made AI useful as a learning tool instead of a shortcut. A success was getting a playable game with three levels, different movement modes, obstacles, coins, attempts, and a progress bar. A challenge was that the code looked confusing at first because there was so much of it. I handled that challenge by studying one system at a time instead of trying to understand the whole game in one reading.
+This made AI useful as a learning tool instead of a shortcut. A success was getting a playable game with four levels, different movement modes, obstacles, coins, attempts, and a progress bar. A challenge was that the code looked confusing at first because there was so much of it. I handled that challenge by studying one system at a time instead of trying to understand the whole game in one reading.
 
 ## What I learned about software and coding
 
