@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cube Dash</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0b0b2a; font-family:'Segoe UI', Arial, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; overflow:hidden; }
+  #wrap { position:relative; width:900px; height:500px; box-shadow:0 0 40px rgba(0,150,255,.4); border-radius:10px; overflow:hidden; }
+  canvas { display:block; background:#1a3dbf; }
+
+  /* ---------- MENU ---------- */
+  #menu {
+    position:absolute; inset:0;
+    background:linear-gradient(180deg,#0d1b6e 0%,#1a3dbf 60%,#2a6ae0 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+  }
+  #menu h1 {
+    color:#fff; font-size:34px; letter-spacing:4px; text-transform:uppercase;
+    text-shadow:0 4px 0 #0a1860, 0 0 25px #4fc3f7; font-weight:900;
+  }
+  .levelCard {
+    width:560px; padding:9px 26px; border-radius:14px; cursor:pointer;
+    display:flex; align-items:center; justify-content:space-between;
+    transition:transform .12s;
+  }
+  .levelCard.green {
+    background:linear-gradient(180deg,#39d353 0%,#1f9e3d 100%);
+    border:4px solid #0f6b26; box-shadow:0 6px 0 #0a4d1b, 0 0 20px rgba(0,0,0,.35);
+  }
+  .levelCard.blue {
+    background:linear-gradient(180deg,#4fc3f7 0%,#1976d2 100%);
+    border:4px solid #0d47a1; box-shadow:0 6px 0 #082f6b, 0 0 20px rgba(0,0,0,.35);
+  }
+  .levelCard.red {
+    background:linear-gradient(180deg,#ff4040 0%,#9e1111 100%);
+    border:4px solid #640000; box-shadow:0 6px 0 #3d0000, 0 0 25px rgba(255,40,40,.45);
+  }
+  .levelCard.yellow {
+    background:linear-gradient(180deg,#ffd93b 0%,#ff9800 100%);
+    border:4px solid #a86b00; box-shadow:0 6px 0 #7a4e00, 0 0 20px rgba(255,217,59,.45);
+  }
+  .levelCard:hover { transform:scale(1.03); }
+  .levelCard:active { transform:scale(.98); }
+  .levelCard .name { color:#fff; font-size:21px; font-weight:800; text-shadow:0 2px 0 rgba(0,0,0,.45); }
+  .levelCard .diff { color:#fff; font-size:11px; opacity:.92; margin-top:2px; }
+  .coinDots { margin-top:3px; font-size:13px; letter-spacing:3px; }
+  .bigIcon { font-size:30px; flex-shrink:0; filter:drop-shadow(0 2px 2px rgba(0,0,0,.5)); }
+  #menuCube { width:42px; height:42px; border-radius:7px; border:3px solid rgba(0,0,0,.4); flex-shrink:0; position:relative; }
+  .menuRow { display:flex; gap:12px; }
+  .hint { color:#bfe3ff; font-size:12px; opacity:.85; }
+
+  /* ---------- ICON KIT ---------- */
+  #iconScreen {
+    position:absolute; inset:0; display:none; flex-direction:column;
+    align-items:center; justify-content:center; gap:14px;
+    background:linear-gradient(180deg,#0d1b6e 0%,#1a3dbf 60%,#2a6ae0 100%); z-index:6;
+  }
+  #iconScreen h2 { color:#fff; font-size:28px; letter-spacing:3px; text-transform:uppercase; text-shadow:0 3px 0 #0a1860, 0 0 20px #4fc3f7; }
+  #prevCvs { background:rgba(0,0,0,.35); border:3px solid rgba(255,255,255,.4); border-radius:12px; }
+  .swRow { display:flex; align-items:center; gap:8px; }
+  .swLabel { color:#fff; font-weight:800; width:70px; text-align:right; font-size:15px; text-shadow:0 2px 2px rgba(0,0,0,.5); }
+  .sw {
+    width:34px; height:34px; border-radius:8px; cursor:pointer;
+    border:3px solid rgba(0,0,0,.45); transition:transform .1s;
+  }
+  .sw:hover { transform:scale(1.15); }
+  .sw.sel { border-color:#fff; box-shadow:0 0 12px #fff; transform:scale(1.12); }
+  .sw.locked { filter:brightness(.5); display:flex; align-items:center; justify-content:center; font-size:13px; }
+  .sw.locked:hover { transform:scale(1.1); filter:brightness(.7); }
+
+  /* ---------- OVERLAYS ---------- */
+  .overlay {
+    position:absolute; inset:0; display:none; flex-direction:column;
+    align-items:center; justify-content:center; gap:16px;
+    background:rgba(5,8,40,.82); z-index:5;
+  }
+  .overlay h2 { color:#fff; font-size:40px; text-shadow:0 0 20px #4fc3f7; }
+  .overlay p { color:#cfe8ff; font-size:18px; }
+  .btn {
+    padding:12px 36px; font-size:20px; font-weight:800; color:#fff; cursor:pointer;
+    background:linear-gradient(180deg,#39d353,#1f9e3d); border:3px solid #0f6b26;
+    border-radius:10px; box-shadow:0 4px 0 #0a4d1b;
+  }
+  .btn:active { transform:translateY(3px); box-shadow:0 1px 0 #0a4d1b; }
+  .btn.alt { background:linear-gradient(180deg,#4fc3f7,#1976d2); border-color:#0d47a1; box-shadow:0 4px 0 #082f6b; }
+  .btn.cyan { background:linear-gradient(180deg,#00e5ff,#0097a7); border-color:#006064; box-shadow:0 4px 0 #003e42; }
+  .btn.purple { background:linear-gradient(180deg,#b388ff,#6a1b9a); border-color:#4a148c; box-shadow:0 4px 0 #2d0a52; }
+  .btn.small { padding:8px 22px; font-size:16px; }
+
+  /* ---------- HUD ---------- */
+  #hud { position:absolute; top:10px; left:0; right:0; display:none; justify-content:center; z-index:4; pointer-events:none; }
+  #progressOuter { position:relative; width:420px; height:20px; background:rgba(0,0,0,.45); border:2px solid rgba(255,255,255,.6); border-radius:10px; overflow:hidden; }
+  #progressInner { height:100%; width:0%; background:linear-gradient(90deg,#39d353,#aef359); }
+  #progressInner.practice { background:linear-gradient(90deg,#00e5ff,#80f3ff); }
+  #progressInner.bot { background:linear-gradient(90deg,#b388ff,#e1ccff); }
+  #progressPct {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:13px; font-weight:800; text-shadow:0 1px 2px #000, 0 0 4px #000;
+    letter-spacing:1px;
+  }
+  #attempt { position:absolute; top:40px; width:100%; text-align:center; color:rgba(255,255,255,.85); font-weight:700; font-size:15px; text-shadow:0 2px 3px #000; }
+  #coinHud { position:absolute; top:4px; right:16px; font-size:22px; letter-spacing:4px; text-shadow:0 2px 3px #000; display:none; }
+
+  /* ---------- PRACTICE BAR ---------- */
+  #practiceBar {
+    position:absolute; bottom:10px; left:0; right:0; display:none;
+    justify-content:center; gap:14px; z-index:4;
+  }
+  .pbtn {
+    padding:9px 20px; font-size:15px; font-weight:800; color:#fff; cursor:pointer;
+    border-radius:10px;
+  }
+  #addCpBtn { background:linear-gradient(180deg,#39d353,#1f9e3d); border:3px solid #0f6b26; box-shadow:0 3px 0 #0a4d1b; }
+  #remCpBtn { background:linear-gradient(180deg,#ff5252,#b71c1c); border:3px solid #7f0000; box-shadow:0 3px 0 #4a0000; }
+  .pbtn:active { transform:translateY(2px); box-shadow:none; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="900" height="500"></canvas>
+
+  <div id="menu">
+    <h1>Cube Dash</h1>
+    <div class="levelCard green" id="lvl1">
+      <div>
+        <div class="name">Stereo Happiness</div>
+        <div class="diff">&#9733; Easy &nbsp;&bull;&nbsp; Level 1</div>
+        <div class="coinDots">&#128993;&#128993;&#128993; 3 coins</div>
+      </div>
+      <div id="menuCube"></div>
+    </div>
+    <div class="levelCard blue" id="lvl2">
+      <div>
+        <div class="name">Back on Course</div>
+        <div class="diff">&#9733;&#9733; Normal &nbsp;&bull;&nbsp; Level 2 &nbsp;&bull;&nbsp; Ship Mode</div>
+        <div class="coinDots">&#128993;&#128993;&#128993; Hard path: 3 coins</div>
+      </div>
+      <div class="bigIcon">&#128640;</div>
+    </div>
+    <div class="levelCard yellow" id="lvlS">
+      <div>
+        <div class="name">Sunshine</div>
+        <div class="diff">&#9733;&#9733;&#9733; Hard &nbsp;&bull;&nbsp; Level 3 &nbsp;&bull;&nbsp; Spider Mode</div>
+        <div class="coinDots">&#9728;&#65039; &#128993;&#128993;&#128993; 3 coins</div>
+      </div>
+      <div class="bigIcon">&#127774;</div>
+    </div>
+    <div class="levelCard red" id="lvl3">
+      <div>
+        <div class="name">Grief</div>
+        <div class="diff">&#128127; DEMON &nbsp;&bull;&nbsp; Level 4 &nbsp;&bull;&nbsp; Cube + Wave + Ship</div>
+        <div class="coinDots" id="griefLockText" style="color:#ffb199;">&#128293; Abandon all hope &nbsp;&bull;&nbsp; &#128993;&#128993;&#128993; 3 coins</div>
+      </div>
+      <div class="bigIcon" id="griefIcon">&#128520;</div>
+    </div>
+    <div class="menuRow">
+      <button class="btn alt small" id="iconKitBtn">&#127912; Icon Kit</button>
+      <button class="btn purple small" id="showcaseBtn">&#129302; Showcase: OFF</button>
+    </div>
+    <div class="hint">Click / Space / Up &mdash; tap: jump / spider-flip &nbsp;&bull;&nbsp; hold: fly &nbsp;&bull;&nbsp; ESC = pause &nbsp;&bull;&nbsp; Showcase ON = bot plays the level and grabs every coin</div>
+  </div>
+
+  <div id="iconScreen">
+    <h2>&#127912; Icon Kit</h2>
+    <div id="kitBalance" style="color:#ffd93b;font-weight:800;font-size:14px;text-shadow:0 2px 2px rgba(0,0,0,.6);transition:color .2s;"></div>
+    <canvas id="prevCvs" width="360" height="110"></canvas>
+    <div class="swRow"><div class="swLabel">Cube</div><div id="rowCube" style="display:flex;gap:8px;"></div></div>
+    <div class="swRow"><div class="swLabel">Ship</div><div id="rowShip" style="display:flex;gap:8px;"></div></div>
+    <div class="swRow"><div class="swLabel">Wave</div><div id="rowWave" style="display:flex;gap:8px;"></div></div>
+    <button class="btn small" id="iconBackBtn">Save &amp; Back</button>
+  </div>
+
+  <div class="overlay" id="deathOverlay">
+    <h2 style="text-shadow:0 0 20px #ff5252;">&#128165; You Crashed!</h2>
+    <p id="deathPct"></p>
+    <button class="btn" id="retryBtn">Retry</button>
+    <button class="btn alt" id="menuBtn1">Menu</button>
+  </div>
+
+  <div class="overlay" id="winOverlay">
+    <h2 style="text-shadow:0 0 25px #ffd93b;">&#127942; Level Complete!</h2>
+    <p id="winName"></p>
+    <p id="winAttempts"></p>
+    <p id="winCoins" style="font-size:22px;"></p>
+    <button class="btn" id="againBtn">Play Again</button>
+    <button class="btn alt" id="menuBtn2">Menu</button>
+  </div>
+
+  <div class="overlay" id="pauseOverlay">
+    <h2>&#9208;&#65039; Paused</h2>
+    <p id="pausePct"></p>
+    <button class="btn" id="resumeBtn">Resume</button>
+    <button class="btn" id="pauseRetryBtn" style="background:linear-gradient(180deg,#ffd93b,#ff9800);border-color:#a86b00;box-shadow:0 4px 0 #7a4e00;">Retry</button>
+    <button class="btn cyan" id="practiceBtn">Practice</button>
+    <button class="btn alt" id="menuBtn3">Menu</button>
+    <p style="font-size:14px; opacity:.7;">Press ESC to resume</p>
+  </div>
+
+  <div id="hud">
+    <div id="progressOuter">
+      <div id="progressInner"></div>
+      <div id="progressPct">0%</div>
+    </div>
+    <div id="attempt"></div>
+    <div id="coinHud"></div>
+  </div>
+
+  <div id="practiceBar">
+    <button class="pbtn" id="addCpBtn">&#128142; Add Checkpoint (Z)</button>
+    <button class="pbtn" id="remCpBtn">&#10060; Remove Checkpoint (X)</button>
+  </div>
+</div>
+
+<script>
+(() => {
+const cvs = document.getElementById('game');
+const ctx = cvs.getContext('2d');
+const W = cvs.width, H = cvs.height;
+const GROUND_Y = 420;
+const CEIL_Y = 60;
+const CUBE = 36;
+const GRAVITY = 1.08;
+const JUMP_V = -13.6;
+const SPEED = 6.2;
+const SHIP_THRUST = 0.46;
+const SHIP_MAXV = 6.3;
+const WAVE_V = 6.2;
+
+let state = 'menu';
+let scrollX = 0;
+let attempts = 1;
+let holdJump = false;
+let deadTimer = 0;
+let particles = [];
+let waveTrail = [];
+let tick = 0;
+let curLevel = 0;
+let practice = false;
+let checkpoints = [];
+let showcase = false;
+let botPlan = null;
+let botFrame = 0;
+let prevHoldG = false;
+
+const player = { x:150, y:GROUND_Y - CUBE, vy:0, onGround:true, rot:0, mode:'cube', grav:1 };
+
+/* ================= ICON COLORS ================= */
+const PALETTE = ['#ffd93b','#ff5252','#ff8f00','#39d353','#00e5ff','#4fc3f7','#ff5ce1','#b388ff','#ffffff','#000000'];
+let cfg = { cube:'#ffd93b', ship:'#ffd93b', wave:'#ffd93b' };
+let unlocked = ['#ffd93b'];
+let banked = { 0:[false,false,false], 1:[false,false,false], 2:[false,false,false], 3:[false,false,false] };
+let griefUnlocked = false;
+try {
+  const saved = JSON.parse(localStorage.getItem('cubeDashSave'));
+  if(saved){
+    if(Array.isArray(saved.unlocked) && saved.unlocked.includes('#ffd93b')) unlocked = saved.unlocked;
+    if(saved.banked){
+      banked = saved.banked;
+      if(banked[3] === undefined){ banked[3] = banked[2] || [false,false,false]; banked[2] = [false,false,false]; }
+    }
+    if(saved.cfg && saved.cfg.cube && saved.cfg.ship && saved.cfg.wave) cfg = saved.cfg;
+    if(saved.griefUnlocked) griefUnlocked = true;
+  }
+} catch(e){}
+for(const k of [0,1,2,3]) if(!Array.isArray(banked[k])) banked[k] = [false,false,false];
+for(const k of ['cube','ship','wave']) if(!unlocked.includes(cfg[k])) cfg[k] = '#ffd93b';
+function coinBalance(){
+  let total = 0;
+  for(const k of [0,1,2,3]) for(const b of banked[k]) if(b) total++;
+  return total - (unlocked.length - 1) - (griefUnlocked ? 3 : 0);
+}
+function saveCfg(){ try{ localStorage.setItem('cubeDashSave', JSON.stringify({cfg, unlocked, banked, griefUnlocked})); }catch(e){} }
+function shade(hex, f){
+  if(hex === '#000000') return '#666666';
+  const r = Math.round(parseInt(hex.slice(1,3),16)*f);
+  const g = Math.round(parseInt(hex.slice(3,5),16)*f);
+  const b = Math.round(parseInt(hex.slice(5,7),16)*f);
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+function hexA(hex, a){
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+}
+
+/* ================= THEMES ================= */
+const THEME_SKY = {
+  bg:['#0d1b6e','#1a3dbf','#2a6ae0'], altBg:['#3d0d6e','#7a1abf','#a52ae0'],
+  accent:'#4fc3f7', ground:'#0d1550', solid:'#10194f', plat:'#1e2a8a',
+  spikeStroke:'#ffffff', bgShape:'rgba(255,255,255,0.05)', embers:false
+};
+const THEME_HELL = {
+  bg:['#120000','#4d0404','#7e0d0d'], altBg:['#0a0000','#330000','#5c0a0a'],
+  accent:'#ff5252', ground:'#1a0000', solid:'#260404', plat:'#4d0a0a',
+  spikeStroke:'#ff9e80', bgShape:'rgba(255,80,0,0.08)', embers:true
+};
+const THEME_SUN = {
+  bg:['#49b6ff','#8ed9ff','#d9f4ff'], altBg:['#ffb74d','#ffd180','#ffe9c7'],
+  accent:'#ff9800', ground:'#2e8b3d', solid:'#1b5e20', plat:'#7cb342',
+  spikeStroke:'#fff59d', bgShape:'rgba(255,255,255,0.35)', embers:false, sun:true
+};
+
+/* ================= LEVEL BUILDERS ================= */
+function buildLevel1(){
+  const spikes=[], solids=[], coins=[];
+  const C=(x,y)=>coins.push({x,y,taken:false});
+  const S=(x)=>spikes.push({x,dir:'up'});
+  const S2=(x)=>{S(x);S(x+34);};
+  const S3=(x)=>{S(x);S(x+34);S(x+68);};
+  const B=(x,st,c)=>solids.push({x, y:GROUND_Y-st*CUBE, w:c*CUBE, h:st*CUBE});
+  const P=(x,up,w)=>solids.push({x, y:GROUND_Y-up, w, h:14, plat:true});
+  S(900); S(1250); S(1600);
+  S2(1950);
+  B(2350,1,3); S(2470);
+  B(2800,1,2); B(2950,2,2);
+  S(3350); S2(3650);
+  S3(4050); P(4030,78,140);
+  S3(4450); P(4430,78,140); P(4650,145,120);
+  S(5000); S(5250); S2(5500);
+  B(5900,1,2); B(6050,2,2); B(6200,3,2); S(6360);
+  S3(6550);
+  P(6850,78,110); P(7080,145,110); P(7310,78,110);
+  S2(7200);
+  S(7650); S(7900); S2(8150); S(8500);
+  P(1840,78,70);              // narrow coin-challenge platform
+  P(3120,145,70);             // high coin-challenge platform
+  C(1980,250);   // land the narrow platform, leap over the double spike
+  C(3220,185);   // climb the block tower, hop to the high platform
+  C(4770,195);   // jump off the TOP floating platform (skip the safe route)
+  return { name:'Stereo Happiness', len:9000, spikes, solids, portals:[], coins, theme:THEME_SKY };
+}
+
+function buildLevel2(){
+  const spikes=[], solids=[], portals=[], coins=[];
+  const S=(x)=>spikes.push({x,dir:'up'});
+  const S2=(x)=>{S(x);S(x+34);};
+  const S3=(x)=>{S(x);S(x+34);S(x+68);};
+  const Sd=(x)=>spikes.push({x,dir:'down'});
+  const B=(x,st,c)=>solids.push({x, y:GROUND_Y-st*CUBE, w:c*CUBE, h:st*CUBE});
+  const P=(x,up,w)=>solids.push({x, y:GROUND_Y-up, w, h:14, plat:true});
+  const R=(x,y,w,h)=>solids.push({x,y,w,h});
+  const C=(x,y)=>coins.push({x,y,taken:false});
+
+  S(800); S(1150); S2(1500);
+  B(1850,1,2); S(2150);
+  portals.push({x:2550, mode:'ship', used:false});
+  R(2950,GROUND_Y-100,60,100);
+  R(3150,CEIL_Y,60,100);
+  Sd(2880);
+  R(3300,200,2400,36);
+  R(3600,CEIL_Y,60,60);
+  C(3760,150);
+  R(3900,150,60,50);
+  Sd(4100);
+  R(4300,CEIL_Y,60,70);
+  C(4500,135);
+  R(4700,150,60,50);
+  Sd(4900);
+  R(5100,CEIL_Y,60,60);
+  C(5300,130);
+  R(3700,236,60,60);
+  R(4100,GROUND_Y-80,60,80);
+  R(4500,236,60,60);
+  R(4900,GROUND_Y-80,60,80);
+  R(5300,236,60,60);
+  R(5900,GROUND_Y-120,60,120);
+  Sd(5990);
+  portals.push({x:6250, mode:'cube', used:false});
+  S(6650); S(6950); S2(7250);
+  S3(7600); P(7580,78,150);
+  S(8100); S2(8400); S(8800);
+
+  return { name:'Back on Course', len:9600, spikes, solids, portals, coins, theme:THEME_SKY };
+}
+
+function buildLevelSun(){
+  const spikes=[], solids=[], portals=[], coins=[];
+  const S=(x)=>spikes.push({x,dir:'up'});
+  const S2=(x)=>{S(x);S(x+34);};
+  const S3=(x)=>{S(x);S(x+34);S(x+68);};
+  const Sd=(x)=>spikes.push({x,dir:'down'});
+  const Sd2=(x)=>{Sd(x);Sd(x+34);};
+  const Sd3=(x)=>{Sd(x);Sd(x+34);Sd(x+68);};
+  const B=(x,st,c)=>solids.push({x, y:GROUND_Y-st*CUBE, w:c*CUBE, h:st*CUBE});
+  const P=(x,up,w)=>solids.push({x, y:GROUND_Y-up, w, h:14, plat:true});
+
+  // sunny cube intro
+  S(850); S2(1200); B(1600,1,2); S(1900); S2(2250);
+  // SPIDER PORTAL
+  portals.push({x:2650, mode:'spider', used:false});
+  // spider garden: flip between the grass and the sky
+  S3(2950); Sd3(3300); S3(3650); Sd3(4000);
+  S2(4300); Sd2(4550); S3(4800); Sd3(5150);
+  S2(5450); S2(5600); Sd3(5850);
+  // CUBE PORTAL
+  portals.push({x:6200, mode:'cube', used:false});
+  // cube finale
+  S(6600); S2(6900); S3(7200);
+  B(7600,1,2); S2(7800);
+  P(8150,78,70); S2(8260);
+  S(8600); S2(8900);
+  coins.push({x:2890, y:380, taken:false});   // spider: hug the grass until the last moment
+  coins.push({x:3940, y:100, taken:false});   // spider: ride the sky right up to the ceiling spikes
+  coins.push({x:8290, y:250, taken:false});   // cube: leap from the narrow platform
+  return { name:'Sunshine', len:9600, spikes, solids, portals, coins, theme:THEME_SUN };
+}
+
+function buildLevel3(){
+  const spikes=[], solids=[], portals=[], coins=[];
+  const S=(x)=>spikes.push({x,dir:'up'});
+  const S2=(x)=>{S(x);S(x+34);};
+  const S3=(x)=>{S(x);S(x+34);S(x+68);};
+  const Sd=(x)=>spikes.push({x,dir:'down'});
+  const B=(x,st,c)=>solids.push({x, y:GROUND_Y-st*CUBE, w:c*CUBE, h:st*CUBE});
+  const R=(x,y,w,h)=>solids.push({x,y,w,h});
+
+  S2(650); S3(950); S3(1250); S2(1550); S(1750); S3(1950);
+  portals.push({x:2350, mode:'wave', used:false});
+  R(2600, CEIL_Y, 50, 140);
+  R(2800, GROUND_Y-140, 50, 140);
+  R(3000, CEIL_Y, 50, 180);
+  R(3200, GROUND_Y-180, 50, 180);
+  R(3400, CEIL_Y, 50, 200);
+  R(3600, GROUND_Y-200, 50, 200);
+  R(3800, CEIL_Y, 50, 150);  R(3800, GROUND_Y-150, 50, 150);
+  R(4000, CEIL_Y, 50, 170);  R(4000, GROUND_Y-110, 50, 110);
+  R(4200, CEIL_Y, 50, 100);  R(4200, GROUND_Y-200, 50, 200);
+  R(4400, CEIL_Y, 50, 220);  R(4400, GROUND_Y-80,  50, 80);
+  R(4600, CEIL_Y, 50, 120);  R(4600, GROUND_Y-180, 50, 180);
+  R(4800, CEIL_Y, 50, 160);  R(4800, GROUND_Y-140, 50, 140);
+  R(5000, CEIL_Y, 50, 200);  R(5000, GROUND_Y-100, 50, 100);
+  portals.push({x:5350, mode:'ship', used:false});
+  R(5650, CEIL_Y, 60, 150);
+  R(5850, GROUND_Y-150, 60, 150);
+  R(6050, CEIL_Y, 60, 200);
+  Sd(6250);
+  R(6350, GROUND_Y-220, 60, 220);
+  R(6550, CEIL_Y, 60, 180);
+  S(6650);
+  R(6750, GROUND_Y-160, 60, 160);
+  Sd(6850);
+  R(6950, CEIL_Y, 60, 140);
+  R(7150, GROUND_Y-190, 60, 190);
+  R(7350, CEIL_Y, 60, 160);
+  S(7450);
+  portals.push({x:7700, mode:'cube', used:false});
+  S3(8000); S2(8300); S3(8550);
+  B(8850,1,2); S3(8980);
+  S2(9300); S3(9550);
+  solids.push({x:8180, y:GROUND_Y-78, w:70, h:14, plat:true});  // coin challenge platform
+  coins.push({x:4250, y:175, taken:false});   // wave: thread the high line under the ceiling block
+  coins.push({x:5800, y:120, taken:false});   // ship: hug the ceiling over the first pillar
+  coins.push({x:8310, y:250, taken:false});   // cube: land the narrow platform, jump between spikes
+
+  return { name:'Grief', len:10000, spikes, solids, portals, coins, theme:THEME_HELL };
+}
+
+const LEVELS = [buildLevel1(), buildLevel2(), buildLevelSun(), buildLevel3()];
+let L = LEVELS[0];
+
+/* ================= SHOWCASE BOT SOLVER =================
+   Simulates the exact game physics frame-by-frame and uses
+   depth-first search with memoization to find a full input
+   plan (hold / release per frame) that beats the level.    */
+function solveLevel(lvl){
+  let startGot = 0;
+  for(let ci=0; ci<lvl.coins.length; ci++) if(lvl.coins[ci].taken) startGot |= (1<<ci);
+  const maxFrames = Math.ceil(lvl.len / SPEED) + 2;
+  const memo = new Set();
+  const plan = new Array(maxFrames).fill(false);
+
+  function simStep(st, hold){
+    let sx = st.sx + SPEED;
+    if(sx >= lvl.len) return ((st.got | startGot) === (1 << lvl.coins.length) - 1) ? { done:true } : null;
+    let y = st.y, vy = st.vy, mode = st.mode, onGround = st.onGround, grav = st.grav || 1;
+    const worldX = sx + 150;
+    const center = worldX + CUBE/2;
+    const prevCenter = center - SPEED;
+    for(const po of lvl.portals){
+      if(prevCenter < po.x && center >= po.x){
+        mode = po.mode;
+        vy = Math.max(-5, Math.min(5, vy));
+        if(po.mode==='spider') grav = 1;
+      }
+    }
+    const prevY = y;
+    if(mode === 'cube'){
+      vy += GRAVITY; y += vy; onGround = false;
+      if(y + CUBE >= GROUND_Y){ y = GROUND_Y - CUBE; vy = 0; onGround = true; }
+    } else if(mode === 'ship'){
+      vy += hold ? -SHIP_THRUST : SHIP_THRUST;
+      vy = Math.max(-SHIP_MAXV, Math.min(SHIP_MAXV, vy));
+      y += vy; onGround = false;
+      if(y <= CEIL_Y){ y = CEIL_Y; vy = 0; }
+      if(y + CUBE >= GROUND_Y){ y = GROUND_Y - CUBE; vy = 0; onGround = true; }
+    } else if(mode === 'spider'){
+      const tapS = hold && !st.ph;
+      if(tapS){
+        grav = -grav;
+        y = grav === 1 ? GROUND_Y - CUBE : CEIL_Y;
+        vy = 0; onGround = true;
+      } else {
+        vy += GRAVITY * grav; y += vy; onGround = false;
+        if(grav !== -1 && y + CUBE >= GROUND_Y){ y = GROUND_Y - CUBE; vy = 0; onGround = true; }
+        if(grav === -1 && y <= CEIL_Y){ y = CEIL_Y; vy = 0; onGround = true; }
+      }
+    } else {
+      vy = hold ? -WAVE_V : WAVE_V;
+      y += vy; onGround = false;
+      if(y <= CEIL_Y){ y = CEIL_Y; }
+      if(y + CUBE >= GROUND_Y){ y = GROUND_Y - CUBE; }
+    }
+    const isWave = mode === 'wave';
+    const px = isWave ? worldX + 10 : worldX;
+    const pw = isWave ? CUBE - 20 : CUBE;
+    let   py = isWave ? y + 10 : y;
+    const ph = isWave ? CUBE - 20 : CUBE;
+    for(const s of lvl.solids){
+      if(s.x > worldX + 200 || s.x + s.w < worldX - 100) continue;
+      if(px < s.x + s.w && px + pw > s.x && py < s.y + s.h && py + ph > s.y){
+        if(isWave) return null;
+        const prevBottom = prevY + CUBE;
+        const prevTop = prevY;
+        if(vy >= 0 && prevBottom <= s.y + 10){
+          y = s.y - CUBE; vy = 0; onGround = true;
+        } else if(mode === 'ship' && vy < 0 && prevTop >= s.y + s.h - 10 && !s.plat){
+          y = s.y + s.h; vy = 0;
+        } else if(!s.plat){
+          return null;
+        }
+        py = y;
+      }
+    }
+    if(mode === 'cube' && hold && onGround){ vy = JUMP_V; onGround = false; }
+    const hx = worldX + 7, hy = y + 7, hw = CUBE - 14, hh = CUBE - 14;
+    for(const sp of lvl.spikes){
+      if(sp.x > worldX + 100 || sp.x + 34 < worldX - 60) continue;
+      const sy0 = sp.dir === 'up' ? GROUND_Y - 26 : CEIL_Y;
+      const sx0 = sp.x + 8;
+      if(hx < sx0 + 18 && hx + hw > sx0 && hy < sy0 + 26 && hy + hh > sy0) return null;
+    }
+    let got = st.got;
+    for(let ci=0; ci<lvl.coins.length; ci++){
+      const c = lvl.coins[ci];
+      if(!((got>>ci)&1) && !c.taken && Math.abs(c.x-(worldX+CUBE/2))<32 && Math.abs(c.y-(y+CUBE/2))<34) got |= (1<<ci);
+    }
+    return { sx, y, vy, mode, onGround, got, grav, ph: hold };
+  }
+
+  function dfs(st, frame){
+    if(frame >= maxFrames) return false;
+    const k = frame + '|' + st.mode.charCodeAt(0) + '|' + Math.round(st.y * 2) + '|' + Math.round(st.vy * 8) + '|' + (st.onGround ? 1 : 0) + '|' + st.got + '|' + (st.grav || 1) + '|' + (st.ph ? 1 : 0);
+    if(memo.has(k)) return false;
+    memo.add(k);
+    let order;
+    let targetY = null;
+    const wxc = st.sx + 150 + CUBE/2;
+    for(let ci=0; ci<lvl.coins.length; ci++){
+      if(!((st.got>>ci)&1) && !lvl.coins[ci].taken){
+        const c = lvl.coins[ci];
+        if(c.x > wxc - 40 && c.x < wxc + 420){ targetY = c.y; break; }
+      }
+    }
+    if(st.mode === 'cube'){
+      order = (targetY !== null && targetY < st.y) ? [true, false] : [false, true];
+    } else if(st.mode === 'spider'){
+      order = [false, true];
+      if(targetY !== null){
+        const onFloor = (st.grav || 1) === 1;
+        if(onFloor !== (targetY > 240)) order = [true, false];
+      }
+    } else {
+      const aim = (targetY !== null) ? targetY : 240;
+      order = (st.y + CUBE/2 > aim) ? [true, false] : [false, true];  // steer toward coin or mid
+    }
+    for(const a of order){
+      const ns = simStep(st, a);
+      if(ns){
+        if(ns.done || dfs(ns, frame + 1)){ plan[frame] = a; return true; }
+      }
+    }
+    return false;
+  }
+
+  const start = { sx:0, y:GROUND_Y - CUBE, vy:0, mode:'cube', onGround:true, got:startGot, grav:1, ph:false };
+  if(dfs(start, 0)) return plan;
+  return null;
+}
+
+/* ================= INPUT ================= */
+function press(e){
+  if(e) e.preventDefault();
+  if(state==='paused') return;
+  if(showcase && (state==='play' || state==='dead')) return;   // bot has the controls
+  holdJump = true;
+}
+function release(){ if(showcase && state==='play') return; holdJump = false; }
+addEventListener('keydown', e => {
+  if(e.code==='Space'||e.code==='ArrowUp'){ press(e); }
+  if(e.code==='Escape'){ e.preventDefault(); togglePause(); }
+  if(e.code==='KeyZ' && practice && state==='play'){ addCheckpoint(); }
+  if(e.code==='KeyX' && practice && state==='play'){ removeCheckpoint(); }
+});
+addEventListener('keyup', e => { if(e.code==='Space'||e.code==='ArrowUp') release(); });
+cvs.addEventListener('mousedown', press);
+addEventListener('mouseup', release);
+cvs.addEventListener('touchstart', press, {passive:false});
+addEventListener('touchend', release);
+
+/* ================= UI ================= */
+const menu = document.getElementById('menu');
+const hud = document.getElementById('hud');
+const deathOverlay = document.getElementById('deathOverlay');
+const winOverlay = document.getElementById('winOverlay');
+const pauseOverlay = document.getElementById('pauseOverlay');
+const progressInner = document.getElementById('progressInner');
+const progressPct = document.getElementById('progressPct');
+const attemptEl = document.getElementById('attempt');
+const coinHud = document.getElementById('coinHud');
+const practiceBar = document.getElementById('practiceBar');
+const practiceBtn = document.getElementById('practiceBtn');
+const iconScreen = document.getElementById('iconScreen');
+const showcaseBtn = document.getElementById('showcaseBtn');
+
+document.getElementById('lvl1').onclick = () => { curLevel=0; attempts=1; startLevel(); };
+document.getElementById('lvl2').onclick = () => { curLevel=1; attempts=1; startLevel(); };
+document.getElementById('lvlS').onclick = () => { curLevel=2; attempts=1; startLevel(); };
+document.getElementById('lvl3').onclick = () => {
+  if(!griefUnlocked){
+    if(coinBalance() >= 3){
+      griefUnlocked = true;
+      saveCfg();
+      updateGriefCard();
+    } else {
+      const t = document.getElementById('griefLockText');
+      t.innerHTML = '&#10060; Not enough coins! Collect coins and finish levels to earn them.';
+      t.style.color = '#ff5252';
+      setTimeout(updateGriefCard, 1600);
+    }
+    return;
+  }
+  curLevel=3; attempts=1; startLevel();
+};
+document.getElementById('retryBtn').onclick = () => { attempts++; startLevel(); };
+document.getElementById('pauseRetryBtn').onclick = () => { if(!practice) attempts++; startLevel(); };
+document.getElementById('againBtn').onclick = () => { attempts=1; startLevel(); };
+document.getElementById('resumeBtn').onclick = resumeGame;
+document.getElementById('menuBtn1').onclick = toMenu;
+document.getElementById('menuBtn2').onclick = toMenu;
+document.getElementById('menuBtn3').onclick = toMenu;
+practiceBtn.onclick = onPracticeBtn;
+document.getElementById('addCpBtn').onclick = () => { if(practice && state==='play') addCheckpoint(); };
+document.getElementById('remCpBtn').onclick = () => { if(practice && state==='play') removeCheckpoint(); };
+document.getElementById('iconKitBtn').onclick = openIconKit;
+document.getElementById('iconBackBtn').onclick = closeIconKit;
+showcaseBtn.onclick = () => {
+  showcase = !showcase;
+  updateShowcaseBtn();
+};
+function updateGriefCard(){
+  const card = document.getElementById('lvl3');
+  const t = document.getElementById('griefLockText');
+  const icon = document.getElementById('griefIcon');
+  if(griefUnlocked){
+    card.style.opacity = '1';
+    icon.innerHTML = '&#128520;';
+    t.style.color = '#ffb199';
+    t.innerHTML = '&#128293; Abandon all hope &nbsp;&bull;&nbsp; &#128993;&#128993;&#128993; 3 coins';
+  } else {
+    card.style.opacity = '0.75';
+    icon.innerHTML = '&#128274;';
+    t.style.color = '#ffd93b';
+    t.innerHTML = '&#128274; LOCKED &nbsp;&bull;&nbsp; click to unlock for &#128993;&#215;3 &nbsp;(you have ' + coinBalance() + ')';
+  }
+}
+function updateShowcaseBtn(){
+  showcaseBtn.innerHTML = '&#129302; Showcase: ' + (showcase ? 'ON' : 'OFF');
+  showcaseBtn.style.filter = showcase ? 'brightness(1.25)' : '';
+}
+
+/* ---------- Icon Kit ---------- */
+function buildSwatches(rowId, key){
+  const row = document.getElementById(rowId);
+  row.innerHTML = '';
+  for(const col of PALETTE){
+    const d = document.createElement('div');
+    const isUnlocked = unlocked.includes(col);
+    d.className = 'sw' + (cfg[key]===col ? ' sel' : '') + (isUnlocked ? '' : ' locked');
+    d.style.background = col;
+    if(!isUnlocked) d.innerHTML = '<span style="pointer-events:none;">&#128274;</span>';
+    d.onclick = () => {
+      if(!unlocked.includes(col)){
+        if(coinBalance() >= 1){
+          unlocked.push(col);   // one purchase unlocks it for cube, ship AND wave
+          saveCfg();
+          refreshKit();
+          updateMenuCube();
+        } else {
+          const bb = document.getElementById('kitBalance');
+          bb.style.color = '#ff5252';
+          setTimeout(()=>{ bb.style.color = '#ffd93b'; }, 650);
+        }
+        return;
+      }
+      cfg[key] = col; saveCfg();
+      refreshKit();
+      updateMenuCube();
+    };
+    row.appendChild(d);
+  }
+}
+function refreshKit(){
+  buildSwatches('rowCube','cube');
+  buildSwatches('rowShip','ship');
+  buildSwatches('rowWave','wave');
+  const bal = coinBalance();
+  document.getElementById('kitBalance').innerHTML =
+    '&#128993; Coins: <b>' + bal + '</b> &nbsp;&bull;&nbsp; locked colors cost 1 coin each &nbsp;&bull;&nbsp; unlocks apply to cube, ship &amp; wave';
+  drawPreview();
+}
+function openIconKit(){
+  menu.style.display='none';
+  iconScreen.style.display='flex';
+  refreshKit();
+}
+function closeIconKit(){
+  iconScreen.style.display='none';
+  menu.style.display='flex';
+}
+function updateMenuCube(){
+  const mc = document.getElementById('menuCube');
+  mc.style.background = cfg.cube;
+  mc.innerHTML = '<div style="position:absolute;top:9px;left:8px;width:7px;height:12px;background:#222;border-radius:2px;"></div>' +
+    '<div style="position:absolute;top:9px;right:8px;width:7px;height:12px;background:#222;border-radius:2px;"></div>' +
+    '<div style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:18px;height:4px;background:#222;border-radius:2px;"></div>';
+}
+function drawPreview(){
+  const pc = document.getElementById('prevCvs');
+  const p = pc.getContext('2d');
+  p.clearRect(0,0,360,110);
+  p.save(); p.translate(60,52);
+  p.fillStyle = cfg.cube; p.strokeStyle = shade(cfg.cube,0.55); p.lineWidth = 3;
+  p.fillRect(-18,-18,36,36); p.strokeRect(-18,-18,36,36);
+  p.fillStyle = '#222';
+  p.fillRect(-11,-9,6,10); p.fillRect(5,-9,6,10); p.fillRect(-8,7,16,4);
+  p.restore();
+  p.save(); p.translate(183,56);
+  p.fillStyle = cfg.ship; p.strokeStyle = shade(cfg.ship,0.45); p.lineWidth = 3;
+  p.beginPath();
+  p.moveTo(-26,2); p.quadraticCurveTo(-30,14,-18,16); p.lineTo(20,16);
+  p.quadraticCurveTo(34,14,28,2); p.closePath(); p.fill(); p.stroke();
+  p.fillStyle = shade(cfg.ship,0.7);
+  p.beginPath(); p.moveTo(-20,2); p.lineTo(-30,-12); p.lineTo(-12,2); p.closePath(); p.fill(); p.stroke();
+  p.fillStyle = cfg.cube; p.strokeStyle = shade(cfg.cube,0.55); p.lineWidth = 2.5;
+  p.fillRect(-11,-20,24,24); p.strokeRect(-11,-20,24,24);
+  p.fillStyle='#222'; p.fillRect(-6,-14,4,7); p.fillRect(4,-14,4,7); p.fillRect(-4,-3,10,3);
+  p.restore();
+  p.save(); p.translate(300,52);
+  p.strokeStyle = hexA(cfg.wave,0.35); p.lineWidth = 12; p.lineJoin='round';
+  p.beginPath(); p.moveTo(-58,28); p.lineTo(-32,-4); p.lineTo(-14,14); p.stroke();
+  p.strokeStyle = cfg.wave; p.lineWidth = 4; p.stroke();
+  p.rotate(-Math.PI/4);
+  p.fillStyle = cfg.wave; p.strokeStyle = shade(cfg.wave,0.55); p.lineWidth = 3;
+  p.beginPath(); p.moveTo(16,0); p.lineTo(-12,-11); p.lineTo(-5,0); p.lineTo(-12,11);
+  p.closePath(); p.fill(); p.stroke();
+  p.restore();
+  p.fillStyle='rgba(255,255,255,.75)'; p.font='bold 12px Segoe UI'; p.textAlign='center';
+  p.fillText('CUBE',60,100); p.fillText('SHIP',185,100); p.fillText('WAVE',300,100);
+}
+
+/* ---------- Pause / Practice ---------- */
+function togglePause(){
+  if(state==='play'){
+    state='paused';
+    holdJump = false;
+    document.getElementById('pausePct').textContent =
+      L.name + ' \u2014 ' + Math.min(100, Math.floor(scrollX/L.len*100)) + '%' +
+      (showcase ? '  (Showcase)' : practice ? '  (Practice)' : '');
+    practiceBtn.textContent = practice ? 'Exit Practice' : 'Practice';
+    practiceBtn.style.display = showcase ? 'none' : 'inline-block';
+    pauseOverlay.style.display='flex';
+  } else if(state==='paused'){
+    resumeGame();
+  }
+}
+function resumeGame(){
+  if(state!=='paused') return;
+  state='play';
+  holdJump = false;
+  pauseOverlay.style.display='none';
+}
+function onPracticeBtn(){
+  if(!practice){
+    practice = true;
+    checkpoints = [makeCheckpoint()];
+    progressInner.classList.add('practice');
+    practiceBar.style.display='flex';
+    attemptEl.textContent = 'Practice Mode';
+    resumeGame();
+  } else {
+    practice = false;
+    checkpoints = [];
+    progressInner.classList.remove('practice');
+    practiceBar.style.display='none';
+    pauseOverlay.style.display='none';
+    attempts = 1;
+    startLevel();
+  }
+}
+function makeCheckpoint(){
+  return { scrollX, y:player.y, vy:player.vy, mode:player.mode, rot:player.rot, grav:player.grav || 1 };
+}
+function addCheckpoint(){
+  checkpoints.push(makeCheckpoint());
+  for(let i=0;i<8;i++){
+    particles.push({ x:player.x+CUBE/2, y:player.y+CUBE/2, vx:(Math.random()-0.5)*5, vy:(Math.random()-0.8)*4, life:20, c:'#39d353' });
+  }
+}
+function removeCheckpoint(){
+  if(checkpoints.length > 1) checkpoints.pop();
+  respawn(checkpoints[checkpoints.length-1]);
+}
+function respawn(cp){
+  scrollX = cp.scrollX;
+  player.y = cp.y; player.vy = cp.vy; player.mode = cp.mode; player.rot = cp.rot; player.grav = cp.grav || 1;
+  player.onGround = false;
+  const wx = scrollX + player.x + CUBE/2;
+  for(const po of L.portals) po.used = (po.x <= wx);
+  waveTrail = []; particles = []; holdJump = false;
+  deathOverlay.style.display='none';
+  state = 'play';
+  updateProgress();
+}
+function toMenu(){
+  state='menu';
+  updateGriefCard();
+  practice = false; checkpoints = [];
+  botPlan = null;
+  progressInner.classList.remove('practice');
+  progressInner.classList.remove('bot');
+  practiceBar.style.display='none';
+  menu.style.display='flex'; hud.style.display='none';
+  deathOverlay.style.display='none'; winOverlay.style.display='none';
+  pauseOverlay.style.display='none';
+}
+function updateProgress(){
+  const pct = Math.min(100, Math.floor(scrollX/L.len*100));
+  progressInner.style.width = Math.min(100, scrollX/L.len*100) + '%';
+  progressPct.textContent = pct + '%';
+}
+function updateCoinHud(){
+  if(!L.coins.length){ coinHud.style.display='none'; return; }
+  coinHud.style.display='block';
+  let s='';
+  for(const c of L.coins) s += c.taken ? '\u{1F7E1}' : '\u26AA';
+  coinHud.innerHTML = s;
+}
+function startLevel(){
+  L = LEVELS[curLevel];
+  scrollX = 0; player.y = GROUND_Y - CUBE; player.vy = 0; player.onGround = true;
+  player.rot = 0; player.mode = 'cube'; player.grav = 1;
+  for(const p of L.portals) p.used = false;
+  L.coins.forEach((c,i)=>{ c.taken = !!(banked[curLevel] && banked[curLevel][i]); });
+  particles = []; waveTrail = []; holdJump = false;
+  practice = false; checkpoints = [];
+  progressInner.classList.remove('practice');
+  progressInner.classList.remove('bot');
+  practiceBar.style.display='none';
+  botPlan = null; botFrame = 0;
+  if(showcase){
+    botPlan = solveLevel(L);
+    if(botPlan){
+      progressInner.classList.add('bot');
+    } else {
+      showcase = false;        // level unsolvable by bot (should not happen)
+      updateShowcaseBtn();
+    }
+  }
+  state='play';
+  menu.style.display='none'; deathOverlay.style.display='none';
+  winOverlay.style.display='none'; pauseOverlay.style.display='none';
+  hud.style.display='flex';
+  attemptEl.textContent = botPlan ? '\u{1F916} Showcase Bot' : 'Attempt ' + attempts;
+  updateProgress();
+  updateCoinHud();
+}
+function die(){
+  state='dead'; deadTimer = 0;
+  for(let i=0;i<26;i++){
+    particles.push({
+      x:player.x+CUBE/2, y:player.y+CUBE/2,
+      vx:(Math.random()-0.5)*10, vy:(Math.random()-0.9)*9,
+      life:40+Math.random()*20, c: Math.random()<.5 ? cfg.cube : '#ff8f00'
+    });
+  }
+  if(!practice){
+    document.getElementById('deathPct').textContent =
+      'You reached ' + Math.min(100, Math.floor(scrollX/L.len*100)) + '%';
+  }
+}
+function win(){
+  state='win';
+  if(!practice && !(showcase && botPlan)){
+    let changed = false;
+    L.coins.forEach((c,i)=>{ if(c.taken && !banked[curLevel][i]){ banked[curLevel][i] = true; changed = true; } });
+    if(changed) saveCfg();
+  }
+  document.getElementById('winName').textContent = L.name + ' \u2014 100%' +
+    (showcase && botPlan ? ' (Showcase)' : practice ? ' (Practice)' : '');
+  document.getElementById('winAttempts').textContent =
+    showcase && botPlan ? 'Completed by Showcase Bot \u{1F916}' :
+    practice ? 'Completed in Practice Mode' : 'Attempts: ' + attempts;
+  const wc = document.getElementById('winCoins');
+  if(L.coins.length){
+    const got = L.coins.filter(c=>c.taken).length;
+    let s='';
+    for(const c of L.coins) s += c.taken ? '\u{1F7E1}' : '\u26AA';
+    wc.textContent = 'Coins: ' + got + '/' + L.coins.length + '  ' + s;
+    wc.style.display='block';
+  } else wc.style.display='none';
+  practiceBar.style.display='none';
+  winOverlay.style.display='flex';
+}
+
+/* ================= PHYSICS ================= */
+function rectsOverlap(a,b){
+  return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+}
+function update(){
+  tick++;
+  if(state==='paused') return;
+  if(state==='dead'){
+    deadTimer++;
+    particles.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=0.35; p.life--; });
+    particles = particles.filter(p=>p.life>0);
+    if(practice){
+      if(deadTimer===28) respawn(checkpoints[checkpoints.length-1]);
+    } else {
+      if(deadTimer===45) deathOverlay.style.display='flex';
+    }
+    return;
+  }
+  if(state!=='play') return;
+
+  // showcase bot takes the controls
+  if(showcase && botPlan){
+    holdJump = botFrame < botPlan.length ? !!botPlan[botFrame] : false;
+    botFrame++;
+  }
+  const tapEdge = holdJump && !prevHoldG;
+  prevHoldG = holdJump;
+
+  scrollX += SPEED;
+  updateProgress();
+  if(scrollX >= L.len){ win(); return; }
+
+  const worldX = scrollX + player.x;
+
+  for(const po of L.portals){
+    if(!po.used && worldX + CUBE/2 >= po.x){
+      po.used = true;
+      player.mode = po.mode;
+      player.vy = Math.max(-5, Math.min(5, player.vy));
+      if(po.mode==='spider') player.grav = 1;
+      if(po.mode!=='wave') waveTrail = [];
+    }
+  }
+
+  const prevY = player.y;
+
+  if(player.mode === 'cube'){
+    player.vy += GRAVITY;
+    player.y += player.vy;
+    player.onGround = false;
+    if(player.y + CUBE >= GROUND_Y){ player.y = GROUND_Y - CUBE; player.vy = 0; player.onGround = true; }
+  } else if(player.mode === 'ship'){
+    player.vy += holdJump ? -SHIP_THRUST : SHIP_THRUST;
+    player.vy = Math.max(-SHIP_MAXV, Math.min(SHIP_MAXV, player.vy));
+    player.y += player.vy;
+    player.onGround = false;
+    if(player.y <= CEIL_Y){ player.y = CEIL_Y; player.vy = 0; }
+    if(player.y + CUBE >= GROUND_Y){ player.y = GROUND_Y - CUBE; player.vy = 0; player.onGround = true; }
+    if(holdJump && tick%2===0){
+      particles.push({ x:player.x-10, y:player.y+CUBE-6, vx:-2-Math.random()*2, vy:(Math.random()-0.3)*2, life:14, c:Math.random()<.5?'#ffd93b':'#ff8f00' });
+    }
+  } else if(player.mode === 'spider'){
+    if(tapEdge){
+      const oldY = player.y;
+      player.grav = -(player.grav || 1);
+      player.y = player.grav === 1 ? GROUND_Y - CUBE : CEIL_Y;
+      player.vy = 0; player.onGround = true;
+      for(let i=0;i<=8;i++){
+        particles.push({ x:player.x+CUBE/2+(Math.random()-0.5)*8, y:oldY + (player.y-oldY)*i/8 + CUBE/2, vx:-1-Math.random()*2, vy:0, life:12, c:cfg.cube });
+      }
+    } else {
+      player.vy += GRAVITY * (player.grav || 1);
+      player.y += player.vy;
+      player.onGround = false;
+      if(player.grav !== -1 && player.y + CUBE >= GROUND_Y){ player.y = GROUND_Y - CUBE; player.vy = 0; player.onGround = true; }
+      if(player.grav === -1 && player.y <= CEIL_Y){ player.y = CEIL_Y; player.vy = 0; player.onGround = true; }
+    }
+  } else {
+    player.vy = holdJump ? -WAVE_V : WAVE_V;
+    player.y += player.vy;
+    player.onGround = false;
+    if(player.y <= CEIL_Y){ player.y = CEIL_Y; }
+    if(player.y + CUBE >= GROUND_Y){ player.y = GROUND_Y - CUBE; }
+    waveTrail.push({ wx: worldX + CUBE/2 - 8, y: player.y + CUBE/2 });
+    while(waveTrail.length > 60) waveTrail.shift();
+  }
+
+  const isWave = player.mode==='wave';
+  const pRect = isWave
+    ? { x:worldX+10, y:player.y+10, w:CUBE-20, h:CUBE-20 }
+    : { x:worldX, y:player.y, w:CUBE, h:CUBE };
+  for(const s of L.solids){
+    if(s.x > worldX + 200 || s.x + s.w < worldX - 100) continue;
+    if(rectsOverlap(pRect, s)){
+      if(isWave){ die(); return; }
+      const prevBottom = prevY + CUBE;
+      const prevTop = prevY;
+      if(player.vy >= 0 && prevBottom <= s.y + 10){
+        player.y = s.y - CUBE; player.vy = 0; player.onGround = true;
+      } else if(player.mode==='ship' && player.vy < 0 && prevTop >= s.y + s.h - 10 && !s.plat){
+        player.y = s.y + s.h; player.vy = 0;
+      } else if(!s.plat){
+        die(); return;
+      }
+      pRect.y = player.y;
+    }
+  }
+
+  if(player.mode==='cube' && holdJump && player.onGround){
+    player.vy = JUMP_V; player.onGround = false;
+  }
+
+  if(player.mode==='cube'){
+    if(!player.onGround) player.rot += 0.11;
+    else player.rot = Math.round(player.rot/(Math.PI/2))*(Math.PI/2);
+  }
+
+  const hb = { x:worldX+7, y:player.y+7, w:CUBE-14, h:CUBE-14 };
+  for(const sp of L.spikes){
+    if(sp.x > worldX + 100 || sp.x + 34 < worldX - 60) continue;
+    const sRect = sp.dir==='up'
+      ? { x:sp.x+8, y:GROUND_Y-26, w:18, h:26 }
+      : { x:sp.x+8, y:CEIL_Y, w:18, h:26 };
+    if(rectsOverlap(hb, sRect)){ die(); return; }
+  }
+
+  for(const c of L.coins){
+    if(c.taken) continue;
+    if(Math.abs(c.x - (worldX+CUBE/2)) < 32 && Math.abs(c.y - (player.y+CUBE/2)) < 34){
+      c.taken = true;
+      updateCoinHud();
+      for(let i=0;i<10;i++){
+        particles.push({ x:c.x-scrollX, y:c.y, vx:(Math.random()-0.5)*6, vy:(Math.random()-0.8)*5, life:25, c:'#ffd93b' });
+      }
+    }
+  }
+
+  if(L.theme.embers && tick%5===0){
+    particles.push({
+      x:Math.random()*W, y:GROUND_Y+40,
+      vx:(Math.random()-0.5)*1.2, vy:-1.5-Math.random()*2,
+      life:50+Math.random()*30, c: Math.random()<.5 ? '#ff6d00' : '#ff3d00'
+    });
+  }
+
+  particles.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; if(p.c!=='#ff6d00'&&p.c!=='#ff3d00') p.vy+=0.2; p.life--; });
+  particles = particles.filter(p=>p.life>0);
+}
+
+/* ================= DRAWING ================= */
+function drawCube(cx, cy, rot){
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rot);
+  ctx.fillStyle = cfg.cube;
+  ctx.strokeStyle = shade(cfg.cube, 0.55); ctx.lineWidth = 3;
+  ctx.fillRect(-CUBE/2, -CUBE/2, CUBE, CUBE);
+  ctx.strokeRect(-CUBE/2, -CUBE/2, CUBE, CUBE);
+  ctx.fillStyle = '#222';
+  ctx.fillRect(-11, -9, 6, 10);
+  ctx.fillRect(5, -9, 6, 10);
+  ctx.fillRect(-8, 7, 16, 4);
+  ctx.restore();
+}
+function drawShip(cx, cy, tilt){
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(tilt);
+  ctx.fillStyle = cfg.ship;
+  ctx.strokeStyle = shade(cfg.ship, 0.45); ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-26, 2);
+  ctx.quadraticCurveTo(-30, 14, -18, 16);
+  ctx.lineTo(20, 16);
+  ctx.quadraticCurveTo(34, 14, 28, 2);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = shade(cfg.ship, 0.7);
+  ctx.beginPath();
+  ctx.moveTo(-20, 2); ctx.lineTo(-30, -12); ctx.lineTo(-12, 2);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = cfg.cube;
+  ctx.strokeStyle = shade(cfg.cube, 0.55); ctx.lineWidth = 2.5;
+  ctx.fillRect(-11, -20, 24, 24);
+  ctx.strokeRect(-11, -20, 24, 24);
+  ctx.fillStyle = '#222';
+  ctx.fillRect(-6, -14, 4, 7);
+  ctx.fillRect(4, -14, 4, 7);
+  ctx.fillRect(-4, -3, 10, 3);
+  ctx.restore();
+}
+function drawSpider(cx, cy, grav){
+  ctx.save();
+  ctx.translate(cx, cy);
+  if(grav === -1) ctx.scale(1, -1);
+  const dark = shade(cfg.cube, 0.55);
+  ctx.strokeStyle = dark; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  for(const s of [-1, 1]){
+    ctx.beginPath(); ctx.moveTo(s*4, 0); ctx.lineTo(s*15, -8); ctx.lineTo(s*22, 6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(s*4, 6); ctx.lineTo(s*13, 12); ctx.lineTo(s*19, 17); ctx.stroke();
+  }
+  ctx.fillStyle = cfg.cube;
+  ctx.beginPath(); ctx.ellipse(0, 6, 13, 10, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(0, -8, 8, 7, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#222';
+  ctx.fillRect(-6, -12, 4, 6); ctx.fillRect(2, -12, 4, 6);
+  ctx.restore();
+}
+function drawWave(cx, cy){
+  if(waveTrail.length > 1){
+    ctx.save();
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = hexA(cfg.wave, 0.35);
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    ctx.moveTo(waveTrail[0].wx - scrollX, waveTrail[0].y);
+    for(let i=1;i<waveTrail.length;i++) ctx.lineTo(waveTrail[i].wx - scrollX, waveTrail[i].y);
+    ctx.lineTo(cx, cy);
+    ctx.stroke();
+    ctx.strokeStyle = cfg.wave;
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    ctx.restore();
+  }
+  const ang = holdJump ? -Math.PI/4 : Math.PI/4;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(ang);
+  ctx.fillStyle = cfg.wave;
+  ctx.strokeStyle = shade(cfg.wave, 0.55); ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(16, 0);
+  ctx.lineTo(-12, -11);
+  ctx.lineTo(-5, 0);
+  ctx.lineTo(-12, 11);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+function drawCheckpointIcon(cx, cy){
+  const pulse = 1 + Math.sin(tick*0.12)*0.08;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(pulse, pulse);
+  ctx.shadowColor = '#39d353'; ctx.shadowBlur = 14;
+  ctx.fillStyle = '#39d353';
+  ctx.strokeStyle = '#aef359'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(0, -16); ctx.lineTo(11, 0); ctx.lineTo(0, 16); ctx.lineTo(-11, 0);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(255,255,255,0.65)';
+  ctx.beginPath();
+  ctx.moveTo(0, -8); ctx.lineTo(5, 0); ctx.lineTo(0, 8); ctx.lineTo(-5, 0);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function drawCoin(cx, cy){
+  const spin = Math.cos(tick*0.08 + cx*0.01);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(Math.max(0.15, Math.abs(spin)), 1);
+  ctx.fillStyle = '#ffd93b';
+  ctx.strokeStyle = '#a97d00'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(0,0,13,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = '#c99a10'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(0,0,7,0,Math.PI*2); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = 'rgba(255,217,59,0.15)';
+  ctx.beginPath(); ctx.arc(cx,cy,20,0,Math.PI*2); ctx.fill();
+}
+function drawPortal(px, mode){
+  const top = mode==='cube' ? CEIL_Y : GROUND_Y-150;
+  const bot = GROUND_Y;
+  const cy = (top+bot)/2, ry = (bot-top)/2;
+  const col = mode==='ship' ? '#ff5ce1' : mode==='wave' ? '#00e5ff' : mode==='spider' ? '#b26bff' : '#7cfc00';
+  ctx.save();
+  ctx.strokeStyle = col; ctx.lineWidth = 5;
+  ctx.shadowColor = col; ctx.shadowBlur = 18;
+  ctx.beginPath(); ctx.ellipse(px, cy, 16, ry, 0, 0, Math.PI*2); ctx.stroke();
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.ellipse(px, cy, 8, ry-10, 0, 0, Math.PI*2); ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = col; ctx.globalAlpha = 0.12;
+  ctx.beginPath(); ctx.ellipse(px, cy, 16, ry, 0, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function draw(){
+  const T = (state==='menu') ? THEME_SKY : L.theme;
+  const useAlt = state!=='menu' && player.mode!=='cube' && T.altBg;
+  const cols = useAlt ? T.altBg : T.bg;
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,cols[0]); g.addColorStop(.6,cols[1]); g.addColorStop(1,cols[2]);
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+  ctx.fillStyle = T.bgShape;
+  for(let i=0;i<6;i++){
+    const bx = ((i*260 - scrollX*0.3) % (W+300) + W+300) % (W+300) - 150;
+    ctx.beginPath();
+    ctx.moveTo(bx, GROUND_Y); ctx.lineTo(bx+90, GROUND_Y-170); ctx.lineTo(bx+180, GROUND_Y);
+    ctx.fill();
+  }
+
+  if(T.sun){
+    ctx.save();
+    ctx.fillStyle = '#fff176';
+    ctx.shadowColor = '#fff176'; ctx.shadowBlur = 35;
+    ctx.beginPath(); ctx.arc(95, 95, 40, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(255,241,118,0.6)'; ctx.lineWidth = 4;
+    for(let i=0;i<8;i++){
+      const a = i*Math.PI/4 + tick*0.004;
+      ctx.beginPath();
+      ctx.moveTo(95 + Math.cos(a)*50, 95 + Math.sin(a)*50);
+      ctx.lineTo(95 + Math.cos(a)*64, 95 + Math.sin(a)*64);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  if(state==='menu'){ return; }
+
+  const endX = L.len - scrollX + 150;
+  if(endX < W+100){
+    ctx.fillStyle = '#ffd93b';
+    ctx.fillRect(endX, 80, 14, GROUND_Y-80);
+    ctx.fillStyle = 'rgba(255,217,59,0.25)';
+    ctx.fillRect(endX-30, 80, 30, GROUND_Y-80);
+    ctx.fillStyle='#fff'; ctx.font='bold 18px Segoe UI'; ctx.textAlign='center';
+    ctx.fillText('FINISH', endX+7, 65);
+    ctx.textAlign='left';
+  }
+
+  if(player.mode!=='cube'){
+    ctx.fillStyle = T.ground;
+    ctx.fillRect(0, 0, W, CEIL_Y);
+    ctx.strokeStyle = T.accent; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0,CEIL_Y); ctx.lineTo(W,CEIL_Y); ctx.stroke();
+  }
+
+  ctx.fillStyle = T.ground;
+  ctx.fillRect(0, GROUND_Y, W, H-GROUND_Y);
+  ctx.strokeStyle = T.accent; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0,GROUND_Y); ctx.lineTo(W,GROUND_Y); ctx.stroke();
+  ctx.strokeStyle = T.accent; ctx.globalAlpha = 0.25; ctx.lineWidth=1;
+  for(let i=0;i<20;i++){
+    const lx = ((i*60 - scrollX) % (W+60) + W+60) % (W+60) - 30;
+    ctx.beginPath(); ctx.moveTo(lx, GROUND_Y); ctx.lineTo(lx-20, H); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  for(const po of L.portals){
+    const px = po.x - scrollX;
+    if(px > -40 && px < W+40) drawPortal(px, po.mode);
+  }
+
+  for(const s of L.solids){
+    const sx = s.x - scrollX;
+    if(sx > W || sx + s.w < 0) continue;
+    if(s.plat){
+      ctx.fillStyle = T.plat;
+      ctx.fillRect(sx, s.y, s.w, s.h);
+      ctx.strokeStyle = T.accent; ctx.lineWidth=2.5;
+      ctx.strokeRect(sx, s.y, s.w, s.h);
+    } else {
+      ctx.fillStyle = T.solid;
+      ctx.fillRect(sx, s.y, s.w, s.h);
+      ctx.strokeStyle = T.accent; ctx.lineWidth=2.5;
+      ctx.strokeRect(sx, s.y, s.w, s.h);
+      ctx.strokeStyle = T.accent; ctx.globalAlpha = 0.3; ctx.lineWidth=1;
+      for(let gx=sx+CUBE; gx<sx+s.w; gx+=CUBE){
+        ctx.beginPath(); ctx.moveTo(gx,s.y); ctx.lineTo(gx,s.y+s.h); ctx.stroke();
+      }
+      for(let gy=s.y+CUBE; gy<s.y+s.h; gy+=CUBE){
+        ctx.beginPath(); ctx.moveTo(sx,gy); ctx.lineTo(sx+s.w,gy); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  for(const sp of L.spikes){
+    const sx = sp.x - scrollX;
+    if(sx > W || sx+34 < 0) continue;
+    ctx.fillStyle = T.ground;
+    ctx.strokeStyle = T.spikeStroke; ctx.lineWidth = 2;
+    ctx.beginPath();
+    if(sp.dir==='up'){
+      ctx.moveTo(sx+2, GROUND_Y);
+      ctx.lineTo(sx+17, GROUND_Y-30);
+      ctx.lineTo(sx+32, GROUND_Y);
+    } else {
+      ctx.moveTo(sx+2, CEIL_Y);
+      ctx.lineTo(sx+17, CEIL_Y+30);
+      ctx.lineTo(sx+32, CEIL_Y);
+    }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+
+  for(const c of L.coins){
+    if(c.taken) continue;
+    const cx = c.x - scrollX;
+    if(cx > -30 && cx < W+30) drawCoin(cx, c.y);
+  }
+
+  if(practice){
+    for(let i=1;i<checkpoints.length;i++){
+      const cp = checkpoints[i];
+      const cx = cp.scrollX + player.x - scrollX + CUBE/2;
+      if(cx > -30 && cx < W+30) drawCheckpointIcon(cx, cp.y + CUBE/2);
+    }
+  }
+
+  if(state!=='dead'){
+    if(player.mode==='cube'){
+      drawCube(player.x+CUBE/2, player.y+CUBE/2, player.rot);
+      if(state==='play'){
+        ctx.fillStyle = hexA(cfg.cube, 0.35);
+        ctx.fillRect(player.x-14, player.y+CUBE-8, 10, 5);
+        ctx.fillRect(player.x-26, player.y+CUBE-7, 7, 4);
+      }
+    } else if(player.mode==='ship'){
+      const tilt = Math.max(-0.5, Math.min(0.5, player.vy * 0.055));
+      drawShip(player.x+CUBE/2, player.y+CUBE/2+4, tilt);
+    } else if(player.mode === 'wave'){
+      drawWave(player.x+CUBE/2, player.y+CUBE/2);
+    } else {
+      drawSpider(player.x+CUBE/2, player.y+CUBE/2, player.grav || 1);
+    }
+    // bot badge above the icon
+    if(showcase && botPlan && state==='play'){
+      ctx.fillStyle = '#b388ff';
+      ctx.font = 'bold 13px Segoe UI'; ctx.textAlign = 'center';
+      ctx.shadowColor = '#b388ff'; ctx.shadowBlur = 8;
+      ctx.fillText('\u{1F916} BOT', player.x + CUBE/2, player.y - 14);
+      ctx.shadowBlur = 0; ctx.textAlign = 'left';
+    }
+  }
+
+  for(const p of particles){
+    ctx.fillStyle = p.c;
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.life/40));
+    ctx.fillRect(p.x-4, p.y-4, 8, 8);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+updateMenuCube();
+updateShowcaseBtn();
+updateGriefCard();
+toMenu();
+loop();
+})();
+</script>
+</body>
+</html>
