@@ -22,6 +22,54 @@ My outcome is a playable game that I can test in the browser. I am not only usin
 
 I used WebbGPT to help create the first version of Cube Dash, but I also used AI as a guide while I studied the code. Instead of asking AI to do everything for me, I asked it where important parts of the game are and what they do. This helped me break a large program into smaller parts that I could test and understand.
 
+## Development process: how I used AI and guided the results
+
+### From an idea to a playable game
+
+I started with the idea of making a fast obstacle game that I could play in the browser. I used WebbGPT to help create a first version of **Cube Dash**, then I tried the result myself instead of treating the first answer as finished. I decided what kind of game I wanted, played each version, and checked whether the movement, obstacles, levels, and progress felt like the game I had in mind.
+
+The first working version gave me a large amount of code, so I could not understand everything at once. I used AI to make the project easier to learn from. I asked it to help me locate important sections of the code, such as the canvas, controls, repeating game loop, collision checks, win condition, and progress tracking. Then I read the nearby lines and connected them to something I could see happen while playing.
+
+### How my questions became more specific
+
+At first, my AI request was broad: help me make a game. After I had a playable result, my questions became more focused because I had real things to test and investigate. For example, I asked questions like:
+
+- Where does Cube Dash remember the player position, speed, and attempts?
+- Which code runs repeatedly while the game is playing?
+- What changes when I press Space or the Up Arrow?
+- Where is the comparison that makes the player lose after hitting an obstacle?
+- How does the game decide that I finished a level?
+
+These are examples of the kinds of questions I used to guide AI; they helped me turn one big file into smaller questions I could answer. I did not just copy an answer. After AI pointed me to a location, I looked at the code, played the game again, and checked whether the explanation matched the result on screen.
+
+### My testing and improvement cycle
+
+My process was: **play the game → notice a behavior or question → find the related code with AI → read it → test again.** For example, when I wanted to understand progress, I looked for the value that changes as the player moves through the level. I learned that **scrollX** is used to move through the level, and the game wins when **scrollX** reaches the level length. When I wanted to understand losing, I followed **rectsOverlap(a, b)** and **die()** and then watched what happened when the cube hit a spike.
+
+This made AI useful as a learning tool instead of a shortcut. A success was getting a playable game with three levels, different movement modes, obstacles, coins, attempts, and a progress bar. A challenge was that the code looked confusing at first because there was so much of it. I handled that challenge by studying one system at a time instead of trying to understand the whole game in one reading.
+
+## What I learned about software and coding
+
+I deepened my understanding of how a game is organized. The **state variables** keep track of changing information such as the player, attempts, **scrollX**, the current level, and whether the player is holding jump. The **game loop** keeps calling **update()** and **draw()** with **requestAnimationFrame(loop)**, so the game can calculate changes and then show them every frame. The **input events** change **holdJump**, and the update code uses that value to decide how the cube, ship, or wave moves.
+
+I also learned that a game does not need one normal score number to show progress. Cube Dash tracks progress using the player's movement through the level, and it keeps track of attempts and collectible coins. I understand more clearly how an if statement can create a rule: if the player's rectangle overlaps an obstacle, the game calls **die()**; if **scrollX** reaches the level length, the game calls **win()**.
+
+The biggest lesson is that software is built from connected pieces. A small variable or condition can change what the player sees on the screen. AI helped me find those pieces faster, but testing and reading the code helped me understand why they work.
+
+## Reflection and my future approach
+
+I completed this project by keeping momentum through short cycles instead of waiting until I understood every line. I moved from an idea, to a first prototype, to testing, to documenting what the code does. Next time, I will begin with a short design plan, make one feature work at a time, and test after each change. I will use AI to help brainstorm, explain code, and point me to relevant sections, but I will still make the final decisions and verify every change in the game.
+
+For future software projects, I will keep a small development log with the feature I worked on, the question I asked AI, the code area I changed or studied, and the result of my test. This will help me catch mistakes, explain my choices, and improve the game step by step.
+
+### Goals for this week
+
+- Explain the collision and win code in my own words without using AI.
+- Make one small, planned change to Cube Dash, test it at least three times, and write down what changed.
+- Trace one variable, such as **scrollX** or **holdJump**, from where it is declared to where it changes the game.
+- Use more specific prompts that name the feature I am testing, then check AI's answer against the actual code and game.
+
+
 | What I wanted to find | Where it is in the code | What I learned |
 | --- | --- | --- |
 | The drawing area | `<canvas id="game" width="900" height="500"></canvas>` near the top of the HTML | The canvas is the screen where the game draws the player, obstacles, and background. |
@@ -38,7 +86,7 @@ AI helped me find these locations faster, but I still read the nearby lines and 
 
 The live game below shows the menu and the three selectable levels. It is my visual documentation of the game that WebbGPT helped me develop.
 
-<iframe src="https://steeveenshii.github.io/cube-dash-v4.html" title="Cube Dash v4 game" width="900" height="500" style="width:100%; max-width:900px; border:2px solid #267CB9; border-radius:8px;"></iframe>
+<iframe src="https://steeveenshii.github.io/cube-dash-v13.html" title="Cube Dash v13 game" width="900" height="500" style="width:100%; max-width:900px; border:2px solid #267CB9; border-radius:8px;"></iframe>
 
 ## The canvas
 
