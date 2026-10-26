@@ -13,7 +13,7 @@ title: Cube Dash
 
 ## Process and outcome
 
-In class, I used WebbGPT to help develop **Cube Dash**. I described the kind of game I wanted, then tested the result and looked through the code to understand how the game works. The newest version has 3 playable levels: **Stereo Happiness**, **Back on Course**, and **Grief**. It also includes cube, ship, and wave movement, a progress bar, attempts, collision detection, and collectible coins.
+In class, I used WebbGPT to help develop **Cube Dash**. I described the kind of game I wanted, then tested the result and looked through the code to understand how the game works. The newest version has 4 playable levels: **Stereo Happiness**, **Back on Course**, **Sunshine**, and **Grief**. It also includes cube, ship, and wave movement, a progress bar, attempts, collision detection, and collectible coins.
 
 My outcome is a playable game that I can test in the browser. I am not only using AI for the game; I am learning to read the code one part at a time and connect each code section to something I can see happen in the game.
 
@@ -23,7 +23,7 @@ This comparison only uses my first version and my newest version. Version 1 prov
 
 | Feature | Cube Dash v1 | Cube Dash v15 |
 | --- | --- | --- |
-| Levels | One level: **Stereo Happiness** | 3 playable levels: **Stereo Happiness**, **Back on Course**, and **Grief** |
+| Levels | One level: **Stereo Happiness** | 4 playable levels: **Stereo Happiness**, **Back on Course**, **Sunshine**, and **Grief** |
 | Movement | Cube jumping | Cube, ship, and wave movement |
 | Challenges | Spikes, blocks, and platforms | More obstacles, portals, coins, and harder sections |
 | Player feedback | Menu, attempts, and a progress bar | Selectable levels, progress, attempts, coins, and more visual feedback |
@@ -66,7 +66,7 @@ These are examples of the kinds of questions I used to guide AI; they helped me 
 
 My process was: **play the game → notice a behavior or question → find the related code with AI → read it → test again.** For example, when I wanted to understand progress, I looked for the value that changes as the player moves through the level. I learned that **scrollX** is used to move through the level, and the game wins when **scrollX** reaches the level length. When I wanted to understand losing, I followed **rectsOverlap(a, b)** and **die()** and then watched what happened when the cube hit a spike.
 
-This made AI useful as a learning tool instead of a shortcut. A success was getting a playable game with **3 playable levels**, different movement modes, obstacles, coins, attempts, and a progress bar. A challenge was that the code looked confusing at first because there was so much of it. I handled that challenge by studying one system at a time instead of trying to understand the whole game in one reading.
+This made AI useful as a learning tool instead of a shortcut. A success was getting a playable game with **4 playable levels**, different movement modes, obstacles, coins, attempts, and a progress bar. A challenge was that the code looked confusing at first because there was so much of it. I handled that challenge by studying one system at a time instead of trying to understand the whole game in one reading.
 
 ## What I learned about software and coding
 
@@ -97,7 +97,7 @@ AI helped me find these locations faster, but I still read the nearby lines and 
 
 ## Game documentation
 
-The live game below shows the menu and **three playable levels**. It is my visual documentation of the game that WebbGPT helped me develop.
+The live game below shows the menu and **four playable levels**. It is my visual documentation of the game that WebbGPT helped me develop.
 
 <iframe src="https://steeveenshii.github.io/cube-dash-v15.html" title="Cube Dash v15 game" width="900" height="500" style="width:100%; max-width:900px; border:2px solid #267CB9; border-radius:8px;"></iframe>
 
@@ -201,6 +201,50 @@ I noticed that one small variable can affect many parts of the game. For example
 2. **Test the canvas size:** I will change the canvas to two different sizes and record what happens to the player, ground, obstacles, and layout. Then I will fix at least one value, such as <code>GROUND_Y</code>, to fit the new size.
 3. **Understand collision math:** I will use the <code>rectsOverlap()</code> function to explain in my own words what each x, y, width, and height comparison checks.
 4. **Create player accounts and unlockables:** I will create an account system that remembers how many coins a player has collected and which colors they have unlocked. I will test that the information is still saved after the player leaves and returns to the game.
+
+
+## Controller: Cube Dash — Arduino Edition
+
+For this version of Cube Dash, I used an Arduino joystick as a real game controller. The joystick sends its vertical position and button state to the computer through a serial connection. I used the **VRy** pin on **A5** to measure whether the joystick moves up or down, and the **SW** pin on **2** to detect a click.
+
+When I click the joystick, the cube jumps. When the game changes to ship or wave mode, moving the joystick up and down controls whether the player flies up or falls. The game reads the serial values at 9600 baud and turns the physical joystick into game input.
+
+### Arduino joystick code
+
+~~~arduino
+const int VRy = A5;
+const int SW = 2;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(SW, INPUT_PULLUP);
+}
+
+void loop() {
+  int y = analogRead(VRy);
+  int pressed = (digitalRead(SW) == LOW);
+
+  Serial.print(y);
+  Serial.print(",");
+  Serial.println(pressed);
+
+  delay(20);
+}
+~~~
+
+### Cube Dash: Arduino Edition
+
+Upload the code above, close the Arduino Serial Monitor, open this game in desktop Chrome or Edge, and select **Connect Arduino**. Keep the joystick centered while it connects. Keyboard controls still work when the Arduino is not connected.
+
+<iframe src="https://steeveenshii.github.io/cube-dash-arduino.html" title="Cube Dash Arduino Edition" width="900" height="620" style="width:100%; max-width:900px; border:2px solid #64dfcb; border-radius:8px;"></iframe>
+
+### Controller demo video
+
+<video controls preload="metadata" width="900" style="width:100%; max-width:900px; border:2px solid #64dfcb; border-radius:8px; background:#000;">
+  <source src="https://github.com/steeveenshii/steeveenshii.github.io/releases/download/controller-demo/cube-dash-controller-demo.mov" type="video/quicktime">
+  Your browser does not support this video. <a href="https://github.com/steeveenshii/steeveenshii.github.io/releases/download/controller-demo/cube-dash-controller-demo.mov">Download the controller demo video</a>.
+</video>
+
 
 <p>
   <a href="https://steeveenshii.github.io/" style="display: inline-block; padding: 12px 18px; color: #ffffff; background: #267CB9; border-radius: 6px; font-weight: bold; text-decoration: none;">← Return to Home</a>
