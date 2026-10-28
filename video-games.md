@@ -241,8 +241,8 @@ Upload the code above, close the Arduino Serial Monitor, open this game in deskt
 ### Controller demo video
 
 <video controls preload="metadata" width="900" style="width:100%; max-width:900px; border:2px solid #64dfcb; border-radius:8px; background:#000;">
-  <source src="https://github.com/steeveenshii/steeveenshii.github.io/releases/download/controller-demo/cube-dash-controller-demo.mov" type="video/quicktime">
-  Your browser does not support this video. <a href="https://github.com/steeveenshii/steeveenshii.github.io/releases/download/controller-demo/cube-dash-controller-demo.mov">Download the controller demo video</a>.
+  <source src="https://steeveenshii.github.io/cube-dash-controller-demo.mp4" type="video/mp4">
+  Your browser does not support this video. <a href="https://steeveenshii.github.io/cube-dash-controller-demo.mp4">Download the controller demo video</a>.
 </video>
 
 
