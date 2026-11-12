@@ -46,3 +46,11 @@ void loop() {
 ## Demonstration
 
 <video controls width="100%"><source src="https://steeveenshii.github.io/img-5423_xHzhEUZ8%20%281%29.mp4" type="video/mp4">Your browser does not support the video tag.</video>
+
+## Scanner range test
+
+This video shows the scanner measuring an object while it moves through different angles. The distance sensor sends out a signal, waits for it to return from the object, and uses that time to calculate how far away the object is. The NEMA 17 stepper motor turns the sensor a little at a time, so the system can collect distance readings from more than one direction instead of only scanning straight ahead.
+
+I found that the best range for this scanner is about **10–15 cm**. At that distance, the sensor gave the clearest and most consistent readings while the motor rotated. Keeping the object in this range helps the scanner make a more reliable picture of its shape and position.
+
+<video controls playsinline preload="metadata" width="100%"><source src="https://steeveenshii.github.io/3d-scanner-scan-demo.mp4" type="video/mp4">Your browser does not support the video tag.</video>
